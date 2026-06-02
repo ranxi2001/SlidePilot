@@ -268,6 +268,7 @@ SlidePilot/
 | 规划先行 | 部分 | 否 | 是（JSON 合同） | **是（JSON 合同）** |
 | 浏览器 QA | Vision LLM | 无 | 像素分析 | **像素 + Playwright** |
 | 布局修复回路 | 是 | 有限 | 依赖 Skill | **按 QA 失败页定向修复** |
+| Token 消耗倾向 | 高（多 Agent + 视觉审查） | 低到中（PPTX 结构生成） | 中到高（逐页 HTML + Skill 提示） | **中到高（规划 + 逐页生成；修复只重跑失败页以控成本）** |
 | 实时 Agent 过程 | 有限 | 无 | 无 | **内置 NDJSON 进度流** |
 | Prompt 模板化 | Jinja2 | 无 | Harness + Playbook | **Markdown harness** |
 | Web UI | Gradio | 无 | 无 | **内置** |
@@ -275,6 +276,8 @@ SlidePilot/
 | 测试模式 | 项目自带 | 项目自带 | Skill 自带 | **Harness + API + Mock E2E** |
 | LLM 服务商 | 任意 | OpenAI | 任意 | **任意** |
 | 开发语言 | Python | Python | Python (Skill) | **TypeScript** |
+
+Token 消耗为相对倾向，实际取决于页数、模型上下文、是否启用视觉/图片能力、QA 失败页数量和修复轮次。SlidePilot 的主要消耗来自规划与逐页 HTML 生成，但修复阶段只重跑失败页，避免整套 deck 反复再生成。
 
 SlidePilot 当前优先做“浏览器可验收的 HTML 演示文稿”，而不是原生 PowerPoint 编辑。当前路线是 `HTML→PNG→PPTX`：嵌入 QA 验收后的逐页截图，视觉还原稳定；更长期的路线是混合 `HTML/SVG→可编辑 PPTX` 导出：简单标题、正文、卡片转成可编辑 PPTX shape，复杂视觉区域保留为渲染图片。
 

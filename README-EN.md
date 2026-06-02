@@ -268,6 +268,7 @@ SlidePilot/
 | Planning-first | Partial | No | Yes (JSON contract) | **Yes (JSON contract)** |
 | Browser QA | Vision LLM | No | Pixel analysis | **Pixel + Playwright** |
 | Layout repair loop | Yes | Limited | Skill-dependent | **QA-targeted failed-page repair** |
+| Token consumption tendency | High (multi-agent + visual review) | Low to medium (PPTX structure generation) | Medium to high (per-page HTML + skill prompts) | **Medium to high (planning + per-page generation; repair only reruns failed pages)** |
 | Real-time agent trace | Limited | No | No | **Built-in NDJSON progress stream** |
 | Prompt templates | Jinja2 | N/A | Harness + playbooks | **Markdown harness** |
 | Web UI | Gradio | N/A | N/A | **Built-in** |
@@ -275,6 +276,8 @@ SlidePilot/
 | Test modes | Project-specific | Project-specific | Skill-specific | **Harness + API + mock E2E** |
 | LLM provider | Any | OpenAI | Any | **Any** |
 | Language | Python | Python | Python (skill) | **TypeScript** |
+
+Token use is a relative tendency, not a fixed benchmark. Actual cost depends on page count, model context, visual/image features, QA failures, and repair rounds. SlidePilot spends most tokens on planning and per-page HTML generation, but repair only reruns failed pages instead of regenerating the whole deck.
 
 SlidePilot currently optimizes for browser-verifiable HTML decks rather than native PowerPoint editing. The current path is `HTML→PNG→PPTX`: it embeds QA-verified screenshots for reliable visual fidelity. The longer-term path is a hybrid `HTML/SVG→editable PPTX` exporter that maps simple text/cards to editable PPTX shapes and keeps complex visuals as rendered images.
 
