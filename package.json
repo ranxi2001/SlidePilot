@@ -1,0 +1,31 @@
+{
+  "name": "slidepilot",
+  "version": "0.1.0",
+  "description": "AI Presentation Agent — turns ideas into polished HTML slide decks",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.11",
+    "dotenv": "^16.6.1",
+    "hono": "^4.4",
+    "nunjucks": "^3.2",
+    "openai": "^4.50",
+    "playwright": "^1.44",
+    "zod": "^3.23"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/nunjucks": "^3.2",
+    "tsx": "^4.15",
+    "typescript": "^5.5",
+    "vitest": "^1.6"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

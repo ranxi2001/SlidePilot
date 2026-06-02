@@ -1,23 +1,14 @@
-# Python
-__pycache__/
-*.py[cod]
-*.egg-info/
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-.venv/
-venv/
+# Dependencies
+node_modules/
 
-# Build artifacts
+# Build
 dist/
-build/
 
 # SlidePilot artifacts
-outputs/
-artifacts/
+runs/
 screenshots/
-*.pdf
 
 # Env / secrets
 .env
 *.env
+.claude/skills/local-dev

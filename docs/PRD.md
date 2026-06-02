@@ -562,8 +562,12 @@ Report: runs/ai-agent-trends/report.md
 
 #### 输入
 
-```bash
-slidepilot create --file research-note.md --pages 8 --audience "导师和组会同学" --style academic
+在 Web UI 中粘贴 Markdown 内容，或上传文件（P1）：
+
+```text
+将以下研究笔记做成 8 页学术风格 PPT，面向导师和组会同学：
+
+[粘贴 Markdown 内容]
 ```
 
 #### 输出
@@ -962,15 +966,18 @@ runs/{run_id}/
 ```bash
 pip install slidepilot
 playwright install chromium
+slidepilot
+# → 打开 http://127.0.0.1:4321
 ```
 
-或：
+或开发模式：
 
 ```bash
-git clone https://github.com/onefly/slidepilot
-cd slidepilot
-uv sync
-uv run playwright install chromium
+git clone https://github.com/ranxi2001/SlidePilot
+cd SlidePilot
+pip install -e .
+playwright install chromium
+slidepilot
 ```
 
 ---
@@ -982,11 +989,10 @@ uv run playwright install chromium
 #### Agent / Backend
 
 - Python 3.11+
-- Typer
-- FastAPI
+- FastAPI (主入口)
 - Pydantic
 - Jinja2
-- Rich
+- SSE-Starlette (实时进度推送)
 - OpenAI-compatible API
 
 #### Browser QA
@@ -1168,114 +1174,150 @@ class RunTrace(BaseModel):
 
 ---
 
-## 11. CLI 设计
+## 11. Web API 设计
 
-### 11.1 create
+SlidePilot 以 Web 为主要交互界面，所有功能通过 HTTP API 暴露。
 
-```bash
-slidepilot create "帮我做一个 10 页 PPT，主题是 AI Agent 的发展趋势，面向本科生，科技感"
+### 11.1 POST /api/create
+
+创建新的演示文稿。支持 SSE 实时推送生成进度。
+
+Request:
+
+```json
+{
+  "prompt": "帮我做一个 10 页 PPT，主题是 AI Agent 的发展趋势，面向本科生，科技感",
+  "pages": 10,
+  "style": "tech-dark",
+  "language": "zh-CN"
+}
 ```
 
-Options:
+Response (SSE events):
 
-```bash
---pages 10
---audience "本科生"
---style "tech-dark"
---language zh-CN
---output runs/ai-agent-trends
---model gpt-4.1
---no-pdf
---no-qa
-```
+```text
+event: progress
+data: {"step": "requirement", "status": "done"}
 
----
+event: progress
+data: {"step": "planner", "status": "done"}
 
-### 11.2 create from file
+event: progress
+data: {"step": "render", "status": "done"}
 
-```bash
-slidepilot create --file note.md --pages 8 --style academic
-```
+event: progress
+data: {"step": "qa", "status": "done", "score": 0.92}
 
----
-
-### 11.3 serve
-
-```bash
-slidepilot serve runs/ai-agent-trends
-```
-
----
-
-### 11.4 export
-
-```bash
-slidepilot export runs/ai-agent-trends --format pdf
+event: complete
+data: {"run_id": "ai-agent-trends", "preview_url": "/runs/ai-agent-trends", "pdf_url": "/runs/ai-agent-trends/deck.pdf"}
 ```
 
 ---
 
-### 11.5 edit
+### 11.2 POST /api/edit
 
-```bash
-slidepilot edit runs/ai-agent-trends "第 3 页减少文字，多用图示"
+修改已有的演示文稿。
+
+Request:
+
+```json
+{
+  "run_id": "ai-agent-trends",
+  "instruction": "第 3 页减少文字，多用图示"
+}
 ```
 
 ---
 
-### 11.6 qa
+### 11.3 GET /runs/{run_id}
+
+预览生成的 HTML slides。
+
+---
+
+### 11.4 GET /runs/{run_id}/deck.pdf
+
+下载 PDF 文件。
+
+---
+
+### 11.5 GET /api/runs
+
+列出历史生成记录。
+
+---
+
+### 11.6 启动方式
 
 ```bash
-slidepilot qa runs/ai-agent-trends
+# 安装后直接启动 Web 服务
+slidepilot
+# → http://127.0.0.1:4321
 ```
 
 ---
 
 ## 12. Web UI 设计
 
-### 12.1 首页
+SlidePilot 的主交互界面是浏览器页面。用户打开 `http://127.0.0.1:4321` 即可使用，无需任何终端操作。
 
-元素：
+### 12.1 首页（输入 + 生成）
 
-- 输入框
-- 页数选择
-- 风格选择
-- 听众输入
+单页应用，包含：
+
+- Prompt 输入框（多行文本）
+- 风格选择下拉框
+- 页数输入
 - 生成按钮
-- 示例 prompt
+- 示例 prompt 提示
 
 示例 prompt:
 
 ```text
-帮我做一个 8 页 PPT，主题是“AI Agent 如何改变软件开发”，面向产品经理，风格商务科技。
+帮我做一个 8 页 PPT，主题是”AI Agent 如何改变软件开发”，面向产品经理，风格商务科技。
 ```
 
 ---
 
-### 12.2 生成页
+### 12.2 生成进度
 
-三栏布局：
+点击生成后，页面展示实时进度（通过 SSE 推送）：
 
 ```text
-┌──────────────┬──────────────────┬────────────────────┐
-│ Prompt / Edit│ Progress / QA     │ Slide Preview       │
-│              │                  │ iframe             │
-└──────────────┴──────────────────┴────────────────────┘
+✓ 解析需求
+✓ 规划叙事结构
+⏳ 生成 slide spec...
 ```
 
 ---
 
-### 12.3 结果页
+### 12.3 结果预览
 
-展示：
+生成完成后展示：
 
-- Preview URL
-- PDF download
-- ZIP download
-- QA score
-- screenshots
-- report
-- edit prompt
+```text
+┌──────────────────────────────────────────────────────┐
+│  Slide Preview (iframe)                              │
+│                                                      │
+│  ┌────────────────────────────────────────────────┐  │
+│  │                                                │  │
+│  │         rendered HTML slides                   │  │
+│  │                                                │  │
+│  └────────────────────────────────────────────────┘  │
+│                                                      │
+│  [下载 PDF]  [下载 HTML]  [QA 报告]                  │
+│                                                      │
+│  修改指令：[___________________________________]     │
+│                                                      │
+└──────────────────────────────────────────────────────┘
+```
+
+功能：
+
+- iframe 内嵌预览生成的 slides
+- 下载 PDF / HTML
+- 查看 QA score 和 screenshots
+- 输入修改指令触发迭代编辑
 
 ---
 
@@ -1527,12 +1569,13 @@ repairs layout issues, and exports a presentation-ready PDF.
 
 ### 17.3 Demo 示例
 
-```bash
-slidepilot create \
-  "Create a 10-slide presentation about the future of AI agents for undergraduate students, in a futuristic dark style."
+在浏览器 `http://127.0.0.1:4321` 中输入：
+
+```text
+Create a 10-slide presentation about the future of AI agents for undergraduate students, in a futuristic dark style.
 ```
 
-输出：
+页面实时显示：
 
 ```text
 ✓ Parsed requirement
@@ -1542,8 +1585,8 @@ slidepilot create \
 ✓ Browser QA passed
 ✓ Exported PDF
 
-Preview: http://localhost:4321/runs/ai-agent-future
-PDF: runs/ai-agent-future/deck.pdf
+Preview: [iframe 内嵌预览]
+[下载 PDF]  [下载 HTML]
 ```
 
 ---
@@ -1552,12 +1595,13 @@ PDF: runs/ai-agent-future/deck.pdf
 
 ### 18.1 P0 必须完成
 
-- CLI create
+- Web UI (prompt input → preview → download)
+- FastAPI server + SSE progress
 - Prompt to RequirementSpec
 - RequirementSpec to DeckPlan
 - DeckPlan to DeckSpec
 - DeckSpec to HTML
-- 5 个基础主题
+- 1 个默认主题 (modern-light)
 - Browser QA
 - QA repair loop
 - PDF export
@@ -1583,14 +1627,15 @@ PDF: runs/ai-agent-future/deck.pdf
 
 ### 18.3 P1
 
-- Web UI
-- Markdown file input
+- 多主题 (tech-dark, minimal, academic, business)
+- Markdown file upload
 - ZIP export
 - speaker notes
 - 单页 edit
 - Mermaid diagram support
 - chart slide
 - GitHub Pages deploy
+- CLI interface (optional developer entry point)
 
 ---
 
@@ -1703,27 +1748,28 @@ PDF: runs/ai-agent-future/deck.pdf
 
 ## 21. 里程碑
 
-### Phase 1: Core CLI
+### Phase 1: Web Server + Core Pipeline
 
-目标：完成从 prompt 到 HTML slides。
+目标：从 prompt 到 HTML slides 的端到端流程，通过浏览器交互。
 
 交付：
 
-- `slidepilot create`
+- FastAPI server + Web UI
 - requirement parser
 - deck planner
 - slide generator
 - HTML renderer
-- 2 个主题
+- 1 个默认主题 (modern-light)
 
 ---
 
-### Phase 2: Browser QA + PDF
+### Phase 2: Browser QA + PDF + SSE
 
-目标：让结果可自动验收和导出。
+目标：让结果可自动验收、实时反馈进度、并导出。
 
 交付：
 
+- SSE 实时进度推送
 - Playwright QA
 - screenshot export
 - PDF export
@@ -1732,41 +1778,27 @@ PDF: runs/ai-agent-future/deck.pdf
 
 ---
 
-### Phase 3: Web UI
+### Phase 3: Iterative Editing + Themes
 
-目标：增强非技术用户体验。
-
-交付：
-
-- FastAPI server
-- Web form
-- progress view
-- iframe preview
-- download buttons
-
----
-
-### Phase 4: Iterative Editing
-
-目标：支持自然语言修改。
+目标：支持自然语言修改和多主题切换。
 
 交付：
 
-- `slidepilot edit`
-- 单页修改
-- 风格修改
+- POST /api/edit
+- 单页/全局修改
+- 风格切换
+- tech-dark / minimal 主题
 - rerender + QA
 
 ---
 
-### Phase 5: Open Source Polish
+### Phase 4: Open Source Polish
 
 目标：让项目适合求职展示。
 
 交付：
 
-- README
-- demo GIF
+- README + demo GIF
 - architecture diagram
 - examples
 - Dockerfile
@@ -1775,10 +1807,10 @@ PDF: runs/ai-agent-future/deck.pdf
 
 ---
 
-## 22. 建议项目目录
+## 22. 项目目录
 
 ```text
-slidepilot/
+SlidePilot/
   README.md
   LICENSE
   pyproject.toml
@@ -1787,86 +1819,56 @@ slidepilot/
 
   docs/
     PRD.md
-    ARCHITECTURE.md
-    ROADMAP.md
 
-  slidepilot/
+  slidepilot/              # Python package
     __init__.py
-    cli.py
-    server.py
+    server.py              # FastAPI app entry point
+    routes.py              # API routes
 
     agent/
+      orchestrator.py      # Pipeline coordinator
       requirement.py
       planner.py
       slide_generator.py
-      editor.py
       repair.py
-      orchestrator.py
-
-    llm/
-      client.py
-      prompts.py
-      schemas.py
 
     models/
-      requirement.py
-      deck.py
+      deck.py              # Pydantic schemas
       qa.py
-      run.py
 
     renderer/
       html_renderer.py
-      theme.py
       templates/
-        base.html
-        slide.html
 
     themes/
       modern-light/
         theme.css
       tech-dark/
         theme.css
-      academic/
-        theme.css
-      business/
-        theme.css
       minimal/
         theme.css
 
     qa/
-      browser.py
-      checks.py
-      repair_hints.py
+      browser.py           # Playwright QA
 
     export/
       pdf.py
-      zip.py
 
     storage/
       run_store.py
-      trace.py
 
     report/
       generator.py
 
-    web/
-      templates/
-        index.html
-        run.html
-      static/
-        app.css
-        app.js
+  web/                     # Static frontend (zero-build)
+    templates/
+      index.html
+    static/
+      css/app.css
+      js/app.js
 
   examples/
-    ai-agent-trends/
-      prompt.txt
-      output/
-
   tests/
-    test_requirement_parser.py
-    test_deck_models.py
-    test_renderer.py
-    test_qa_checks.py
 ```
 
 ---

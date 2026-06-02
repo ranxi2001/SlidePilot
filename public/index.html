@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SlidePilot</title>
+  <link rel="stylesheet" href="/public/css/app.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>SlidePilot</h1>
+      <p class="tagline">描述你的想法，获得专业演示文稿</p>
+    </header>
+
+    <main>
+      <section class="input-panel">
+        <textarea id="prompt" rows="4" placeholder="例如：帮我做一个 8 页 PPT，主题是 AI Agent 如何改变软件开发，面向产品经理，风格商务科技"></textarea>
+        <div class="options">
+          <select id="style">
+            <option value="modern-light">现代明亮</option>
+            <option value="tech-dark">科技暗色</option>
+            <option value="minimal">极简</option>
+          </select>
+          <input id="pages" type="number" value="8" min="4" max="20">
+        </div>
+        <button id="btn-create">生成演示文稿</button>
+      </section>
+
+      <section id="progress-panel" hidden>
+        <ul id="progress-list"></ul>
+      </section>
+
+      <section id="preview-panel" hidden>
+        <iframe id="preview-frame"></iframe>
+        <div class="actions">
+          <a id="btn-pdf" class="btn" download>下载 PDF</a>
+          <a id="btn-html" class="btn" download>下载 HTML</a>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="/public/js/app.js"></script>
+</body>
+</html>
