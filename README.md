@@ -52,8 +52,21 @@
 预览: http://127.0.0.1:4321/runs/{id}/preview.html
 ```
 
-<!-- TODO: 添加截图 -->
-<!-- <img src="docs/assets/demo-grid.png" width="100%" /> -->
+### Agent 运行过程
+
+<img src="docs/assets/readme/agent-trace.png" width="100%" alt="SlidePilot Agent 运行过程" />
+<img src="docs/assets/readme/agent-repair.png" width="100%" alt="SlidePilot Agent 修复回路" />
+
+### 生成效果
+
+<p>
+  <img src="docs/assets/readme/harness-slide-01.jpg" width="49%" alt="Harness 示例页 1" />
+  <img src="docs/assets/readme/harness-slide-02.jpg" width="49%" alt="Harness 示例页 2" />
+</p>
+<p>
+  <img src="docs/assets/readme/harness-slide-03.jpg" width="49%" alt="Harness 示例页 3" />
+  <img src="docs/assets/readme/harness-slide-04.jpg" width="49%" alt="Harness 示例页 4" />
+</p>
 
 ## 快速开始
 

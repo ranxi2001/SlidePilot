@@ -52,8 +52,21 @@ Unlike traditional PPT generators that stop at text generation, SlidePilot treat
 Preview: http://127.0.0.1:4321/runs/{id}/preview.html
 ```
 
-<!-- TODO: Add screenshot grid here -->
-<!-- <img src="docs/assets/demo-grid.png" width="100%" /> -->
+### Agent Trace
+
+<img src="docs/assets/readme/agent-trace.png" width="100%" alt="SlidePilot Agent trace" />
+<img src="docs/assets/readme/agent-repair.png" width="100%" alt="SlidePilot Agent repair loop" />
+
+### Generated Deck
+
+<p>
+  <img src="docs/assets/readme/harness-slide-01.jpg" width="49%" alt="Harness sample slide 1" />
+  <img src="docs/assets/readme/harness-slide-02.jpg" width="49%" alt="Harness sample slide 2" />
+</p>
+<p>
+  <img src="docs/assets/readme/harness-slide-03.jpg" width="49%" alt="Harness sample slide 3" />
+  <img src="docs/assets/readme/harness-slide-04.jpg" width="49%" alt="Harness sample slide 4" />
+</p>
 
 ## Quick Start
 
