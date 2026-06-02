@@ -1,61 +1,61 @@
 <div align="center">
   <h1>SlidePilot</h1>
-  <p><strong>AI Presentation Agent — describe your idea, get a polished deck.</strong></p>
+  <p><strong>AI 演示文稿智能体 — 描述想法，获得专业 Deck</strong></p>
   <p>
-    <a href="#quick-start"><img src="https://img.shields.io/badge/Quick_Start-blue?style=for-the-badge" alt="Quick Start" /></a>
+    <a href="#快速开始"><img src="https://img.shields.io/badge/快速开始-blue?style=for-the-badge" alt="Quick Start" /></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License" /></a>
-    <a href="README-ZH.md"><img src="https://img.shields.io/badge/中文文档-black?style=for-the-badge" alt="中文" /></a>
+    <a href="README-EN.md"><img src="https://img.shields.io/badge/English-black?style=for-the-badge" alt="English" /></a>
   </p>
   <p>
-    <img src="https://img.shields.io/badge/Pipeline-7_stages-6366f1?style=flat-square" />
-    <img src="https://img.shields.io/badge/Themes-3_built--in-818cf8?style=flat-square" />
-    <img src="https://img.shields.io/badge/Page_Types-11-34d399?style=flat-square" />
-    <img src="https://img.shields.io/badge/QA_Checks-DOM_%2B_pixel-f59e0b?style=flat-square" />
-    <img src="https://img.shields.io/badge/LLM-Any_OpenAI--compatible-09090b?style=flat-square" />
+    <img src="https://img.shields.io/badge/流水线-7_阶段-6366f1?style=flat-square" />
+    <img src="https://img.shields.io/badge/主题-3_内置-818cf8?style=flat-square" />
+    <img src="https://img.shields.io/badge/页面类型-11_种-34d399?style=flat-square" />
+    <img src="https://img.shields.io/badge/QA_检查-DOM_%2B_pixel-f59e0b?style=flat-square" />
+    <img src="https://img.shields.io/badge/LLM-任意_OpenAI_兼容-09090b?style=flat-square" />
   </p>
 </div>
 
 ---
 
-**SlidePilot** is an open-source AI presentation agent that turns a topic, outline, or document into a professional HTML slide deck — with automatic browser-based QA, visual repair, manual single-slide revision, PDF export, and screenshot-based PPTX export. No PowerPoint, no code, no design skills required.
+**SlidePilot** 是一个开源 AI 演示文稿智能体，能将主题、大纲或文档自动转化为专业 HTML 演示文稿——包含浏览器自动验收、像素级 QA、视觉修复、单页人工修订、多模态图片工具、PDF 导出和截图式 PPTX 导出。无需 PowerPoint，无需写代码，无需设计能力。
 
-Unlike traditional PPT generators that stop at text generation, SlidePilot treats presentation creation as a **complete agent workflow**: understand → plan → style → render → inspect → repair → export.
+与传统 PPT 生成工具只做"文本填充"不同，SlidePilot 将演示文稿创建视为**完整的 Agent 工作流**：理解需求 → 规划叙事 → 锁定风格 → 渲染页面 → 自动验收 → 修复缺陷 → 导出交付。
 
-## Why SlidePilot
+## 为什么选择 SlidePilot
 
-| Pain Point | SlidePilot's Answer |
-|---|---|
-| Generated slides look generic | **Planning-first**: per-page content budget and layout contract before any HTML |
-| No visual QA after generation | **Playwright + pixel QA**: automated overflow, blank ratio, edge cutoff, contrast, and screenshot checks |
-| Style inconsistency across pages | **Global CSS lock**: one `style.json` → `global.css` applied to all pages |
-| Can't iterate without code | **Web UI**: type your prompt, preview in browser, revise a single page, download PDF/PPTX |
-| Locked to one LLM provider | **Any OpenAI-compatible API**: OpenAI, DeepSeek, Ollama, vLLM, etc. |
-| Prompts buried in code | **Prompt Harness**: all LLM prompts as editable `.md` templates |
-| Needs visual assets | **Multimodal image tool**: optional image generation/editing adapter with local asset storage |
+| 痛点 | SlidePilot 的解法 |
+|------|------------------|
+| 生成的页面千篇一律 | **规划先行**：每页有结构化内容预算和布局合同，再生成 HTML |
+| 生成后没有视觉检查 | **Playwright + 像素 QA**：检测溢出、空白比例、边缘裁切、低对比度、截图异常 |
+| 各页风格不统一 | **全局样式锁**：一份 `style.json` → `global.css`，全 deck 统一 |
+| 不会写代码就无法迭代 | **浏览器 UI**：输入需求、预览结果、查看 QA、单页修订、下载 PDF/PPTX，零门槛 |
+| 绑定单一 LLM 服务商 | **任意 OpenAI 兼容 API**：OpenAI、DeepSeek、Ollama、vLLM 等 |
+| Prompt 写死在代码里 | **Prompt Harness**：所有提示词为可编辑的 `.md` 模板文件 |
+| 缺少视觉资产 | **多模态图片工具**：可选生图/以图改图适配器，生成资产保存到本地 run 目录 |
 
-## Demo
+## 效果演示
 
 ```bash
-# Open http://127.0.0.1:4321, type:
-"Make a 10-slide presentation about the future of AI Agents for undergraduate students, dark tech style"
+# 打开 http://127.0.0.1:4321，输入：
+"帮我做一个 10 页 PPT，主题是 AI Agent 的发展趋势，面向本科生，科技暗色风格"
 ```
 
 ```
-✓ Requirement parsed
-✓ Outline generated (10 pages)
-✓ Style locked (tech-dark)
-✓ Pages rendered (10/10)
-✓ Browser QA passed (score: 1.0)
-✓ PDF exported
-✓ PPTX exported
+✓ 需求解析完成
+✓ 叙事大纲生成（10 页）
+✓ 风格锁定（tech-dark）
+✓ 页面渲染完成（10/10）
+✓ 浏览器 QA 通过（score: 1.0）
+✓ PDF 导出成功
+✓ PPTX 导出成功
 
-Preview: http://127.0.0.1:4321/runs/{id}/preview.html
+预览: http://127.0.0.1:4321/runs/{id}/preview.html
 ```
 
-<!-- TODO: Add screenshot grid here -->
+<!-- TODO: 添加截图 -->
 <!-- <img src="docs/assets/demo-grid.png" width="100%" /> -->
 
-## Quick Start
+## 快速开始
 
 ```bash
 git clone https://github.com/ranxi2001/SlidePilot
@@ -63,275 +63,285 @@ cd SlidePilot
 npm install
 npx playwright install chromium
 
-# Start the web server (works without LLM config — uses mock data)
+# 启动服务（不配置 LLM 也能跑，使用 mock 数据）
 npm run dev
 # → http://127.0.0.1:4321
 ```
 
-### Enable LLM
+### 接入大模型
 
 ```bash
 cp .env.example .env
-# Edit .env with your API credentials:
+# 编辑 .env 填入你的 API 信息：
 #   LLM_BASE_URL=https://api.openai.com/v1
 #   LLM_API_KEY=sk-...
 #   LLM_MODEL=gpt-4o
 ```
 
-SlidePilot works with **any OpenAI-compatible API** — OpenAI, DeepSeek, Ollama, vLLM, Azure OpenAI, etc.
+支持**任意 OpenAI 兼容 API** — OpenAI、DeepSeek、Ollama、vLLM、Azure OpenAI 等均可直接使用。
 
-## Architecture
+## 系统架构
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  Web UI (Browser)                                           │
-│  Prompt → Progress → Preview (iframe) → Download PDF/PPTX   │
+│  浏览器 (Web UI)                                             │
+│  输入需求 → 实时进度 → 预览 (iframe) → 下载 PDF/PPTX          │
 └──────────────────────────────┬──────────────────────────────┘
                                │ POST /api/create
 ┌──────────────────────────────▼──────────────────────────────┐
-│  Agent Pipeline                                             │
+│  Agent 流水线                                                │
 │                                                             │
 │  ┌─────────┐  ┌─────────┐  ┌──────────┐  ┌─────────────┐  │
-│  │Requirement│→│ Outline │→│  Style   │→│ Per-Page Gen │  │
-│  │  Parser  │  │ Planner │  │   Lock   │  │  (parallel) │  │
+│  │ 需求解析 │→│ 大纲规划 │→│ 风格锁定 │→│ 逐页生成    │  │
 │  └─────────┘  └─────────┘  └──────────┘  └──────┬──────┘  │
 │                                                   │         │
 │                              ┌─────────┐  ┌──────▼──────┐  │
-│                              │ Repair  │←─│ Browser QA  │  │
-│                              │  Agent  │  │ (Playwright)│  │
+│                              │  修复   │←─│ 浏览器 QA   │  │
+│                              │  Agent  │  │(Playwright) │  │
 │                              └────┬────┘  └─────────────┘  │
 │                                   │                         │
 │                    ┌──────────────▼──────────────┐          │
-│                    │  Assemble + PDF/PPTX Export │          │
-│                    └────────────────────────────-┘          │
+│                    │   组装预览 + PDF/PPTX 导出    │          │
+│                    └─────────────────────────────┘          │
 └─────────────────────────────────────────────────────────────┘
                                │
 ┌──────────────────────────────▼──────────────────────────────┐
-│  Artifacts (per run)                                        │
+│  产物（每次运行）                                             │
 │  runs/{id}/                                                 │
-│  ├── outline.json        — narrative structure              │
-│  ├── style.json          — locked visual system             │
-│  ├── global.css          — generated from style.json        │
-│  ├── planning/*.json     — per-page content contract        │
-│  ├── slides/*.html       — per-page HTML (1280×720)         │
-│  ├── png/*.png           — per-page screenshots             │
-│  ├── preview.html        — assembled deck with navigation   │
-│  ├── deck.pdf            — print-ready export               │
-│  ├── deck.pptx           — screenshot-based PPTX export     │
-│  └── report.md           — QA summary                       │
+│  ├── outline.json        — 叙事结构                          │
+│  ├── style.json          — 锁定的视觉系统                     │
+│  ├── global.css          — 由 style.json 生成                │
+│  ├── planning/*.json     — 每页内容合同                       │
+│  ├── slides/*.html       — 每页独立 HTML（1280×720）          │
+│  ├── png/*.png           — 每页截图                          │
+│  ├── preview.html        — 组装后的演示 deck                  │
+│  ├── deck.pdf            — 可打印 PDF                        │
+│  ├── deck.pptx           — 截图式 PPTX                        │
+│  └── report.md           — QA 报告                           │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## Core Design
+## 核心设计
 
-### Per-Page HTML (1280×720)
+### 每页独立 HTML（1280×720）
 
-Each slide is a **self-contained HTML file** with a fixed 1280×720 viewport — like PPTAgent and ppt-agent-skills. This enables:
-- Independent QA and repair per page
-- Parallel generation
-- Individual screenshots
-- Clean PDF page breaks
+每张幻灯片是一个**独立的 HTML 文件**，固定 1280×720 视口——与 PPTAgent、ppt-agent-skills 一致。这使得：
+- 每页独立 QA、独立修复
+- 可并行生成
+- 逐页截图
+- PDF 分页干净
 
-### Planning-First Rendering
+### 规划先行渲染
 
-Inspired by ppt-agent-skills' density contract system:
-
-```
-Outline → PagePlanning (JSON) → HTML
-```
-
-The LLM first outputs a structured **content plan** (layout, density, content budget, blocks), then generates HTML that must conform to it. This prevents "attention collapse" from trying to plan + design + code simultaneously.
-
-### Prompt Harness
-
-All LLM prompts live as **editable Markdown templates** in `src/prompts/templates/`:
+借鉴 ppt-agent-skills 的密度合同系统：
 
 ```
-requirement.md   — parse user intent
-outline.md       — narrative structure
-style.md         — visual system
-page-planning.md — per-page content contract
-page-html.md     — HTML generation
-repair.md        — fix QA failures
-revise.md        — apply user-requested single-page edits
+大纲 → PagePlanning (JSON) → HTML
 ```
 
-Variables are injected via `{{VAR}}` syntax. Missing variables throw errors. No prompt logic in application code.
+LLM 先输出结构化的**内容规划**（布局、密度、内容预算、区块分配），然后再基于规划生成 HTML。避免"一步到位"导致的注意力塌陷。
 
-### Pixel-Level QA
+### Prompt Harness（提示词引擎）
 
-Playwright checks every page automatically:
+所有 LLM 提示词存放在 `src/prompts/templates/` 下的 **Markdown 模板**中：
 
-| Check | What it detects |
-|-------|-----------------|
-| DIM | Viewport exceeds 1280×720 |
-| OVERFLOW | Content elements exceed slide bounds |
-| BLANK | Page has < 5 characters of text |
-| CONSOLE | JavaScript errors |
-| SCREENSHOT | Captures PNG for visual review |
-| PNG-SIZE | Screenshot file too small or corrupt |
-| BLANK-PIXEL | Excessive single-color/blank-like area |
-| EDGE-CUT | Foreground pixels touching page edges |
-| LOW-CONTRAST | Weak luminance separation in content regions |
-| VERTICAL-TEXT | Narrow vertical foreground bands that may indicate stacked text |
+```
+requirement.md   — 需求解析
+outline.md       — 叙事大纲
+style.md         — 视觉系统
+page-planning.md — 单页内容合同
+page-html.md     — HTML 生成
+repair.md        — QA 修复
+revise.md        — 单页人工修订
+```
 
-Failed pages enter a **repair loop** (max 3 rounds) where the LLM fixes issues based on QA feedback.
+通过 `{{VAR}}` 语法注入变量，缺失变量直接报错。应用代码中不含任何 prompt 逻辑。
 
-Generated decks can also be manually revised from the Web UI. The endpoint `POST /api/runs/:runId/slides/:pageIndex/revise` updates one slide, reruns QA, rebuilds `preview.html`, and regenerates PDF/PPTX artifacts.
+### 像素级 QA
 
-### Multimodal Image Tool
+Playwright 自动检查每一页：
 
-SlidePilot includes an optional OpenAI-compatible image adapter for generation and image editing. It defaults to the same `LLM_BASE_URL`/`LLM_API_KEY` and can be overridden with `IMAGE_BASE_URL`, `IMAGE_API_KEY`, and `IMAGE_MODEL`.
+| 检查项 | 检测内容 |
+|--------|---------|
+| DIM | 视口是否超过 1280×720 |
+| OVERFLOW | 内容元素是否超出幻灯片边界 |
+| BLANK | 页面文字是否少于 5 个字符 |
+| CONSOLE | 是否有 JavaScript 错误 |
+| SCREENSHOT | 截图保存供人工复查 |
+| PNG-SIZE | 截图文件是否过小或损坏 |
+| BLANK-PIXEL | 是否存在过高单色/空白区域 |
+| EDGE-CUT | 前景像素是否贴边，疑似裁切 |
+| LOW-CONTRAST | 内容区域亮度分离是否过弱 |
+| VERTICAL-TEXT | 是否存在疑似竖排/堆叠文字 |
 
-- `POST /api/images/generate` creates PNG assets under `runs/{id}/assets/`.
-- `POST /api/images/edit` accepts multipart image uploads and stores edited PNG assets.
-- During Agent generation, visual blocks can call the image tool automatically when the image API is configured, then render the generated local asset in the slide.
+QA 失败的页面进入**修复循环**（最多 3 轮），LLM 根据 QA 反馈修复问题。
 
-## Tech Stack
+生成后的 deck 也可以在 Web UI 中做单页人工修订。接口 `POST /api/runs/:runId/slides/:pageIndex/revise` 会更新指定页面、重新 QA、重建 `preview.html`，并重新导出 PDF/PPTX。
 
-| Layer | Technology |
-|-------|-----------|
-| Runtime | Node.js 20+ |
-| Language | TypeScript |
-| Web Server | Hono |
-| Schema Validation | Zod |
-| Browser Automation | Playwright |
-| LLM Interface | OpenAI SDK (any compatible API) |
-| Image Tool | OpenAI-compatible images API |
-| PDF Export | Playwright Print |
-| PPTX Export | PptxGenJS (full-slide PNG export) |
+### 多模态图片工具
 
-## Project Structure
+SlidePilot 内置可选 OpenAI-compatible 图片适配器，支持图片生成和以图改图。默认复用 `LLM_BASE_URL` / `LLM_API_KEY`，也可以用 `IMAGE_BASE_URL`、`IMAGE_API_KEY`、`IMAGE_MODEL` 单独配置。
+
+- `POST /api/images/generate`：生成 PNG，保存到 `runs/{id}/assets/`。
+- `POST /api/images/edit`：接收 multipart 图片上传，保存编辑后的 PNG。
+- Agent 生成页面时，如果页面规划中有 visual block 且图片工具开启，会自动调用图片工具并把本地图片资产渲染进页面。
+- 可通过 `IMAGE_AUTO_GENERATE` 和 `IMAGE_MAX_IMAGES_PER_RUN` 控制自动生图与单次 run 图片数量。
+
+## 技术栈
+
+| 层级 | 技术 |
+|------|-----|
+| 运行时 | Node.js 20+ |
+| 语言 | TypeScript |
+| Web 服务 | Hono |
+| Schema 校验 | Zod |
+| 浏览器自动化 | Playwright |
+| LLM 接口 | OpenAI SDK（任意兼容 API） |
+| 图片工具 | OpenAI-compatible Images API |
+| PDF 导出 | Playwright Print |
+| PPTX 导出 | PptxGenJS（整页 PNG 嵌入） |
+
+## 项目结构
 
 ```
 SlidePilot/
 ├── src/
-│   ├── server.ts                 # Web server entry
-│   ├── routes.ts                 # API endpoints
-│   ├── schemas.ts                # Zod schemas (all data models)
+│   ├── server.ts                 # Web 服务入口
+│   ├── routes.ts                 # API 路由
+│   ├── schemas.ts                # Zod 数据模型
 │   ├── llm/
-│   │   └── client.ts             # OpenAI-compatible LLM client
+│   │   └── client.ts             # LLM 客户端（OpenAI 兼容）
 │   ├── multimodal/
-│   │   └── image-client.ts        # Image generation/editing adapter
+│   │   └── image-client.ts        # 图片生成/以图改图适配器
 │   ├── prompts/
-│   │   ├── harness.ts            # Template engine
-│   │   └── templates/*.md        # Editable prompt templates
+│   │   ├── harness.ts            # 模板引擎
+│   │   └── templates/*.md        # 可编辑 prompt 模板
 │   ├── agent/
-│   │   ├── orchestrator.ts       # Pipeline coordinator
-│   │   └── reviser.ts            # Single-slide manual revision
+│   │   ├── orchestrator.ts       # 流水线协调器
+│   │   └── reviser.ts            # 单页人工修订
 │   ├── renderer/
 │   │   ├── style-generator.ts    # StyleSpec → global.css
 │   │   ├── page-renderer.ts      # PagePlanning → HTML
-│   │   └── assembler.ts          # Pages → preview deck
+│   │   └── assembler.ts          # 多页 → 预览 deck
 │   ├── qa/
-│   │   └── browser-qa.ts         # Playwright visual checks
+│   │   └── browser-qa.ts         # Playwright 视觉检查
 │   ├── export/
-│   │   ├── pdf.ts                # Per-page PDF merge
-│   │   └── pptx.ts               # Screenshot-based PPTX export
+│   │   ├── pdf.ts                # 逐页 PDF 合并
+│   │   └── pptx.ts               # 截图式 PPTX 导出
 │   ├── storage/
-│   │   └── run-store.ts          # Artifact persistence
+│   │   └── run-store.ts          # 产物持久化
 │   └── report/
-│       └── generator.ts          # Markdown report
-├── public/                       # Web UI (zero-build)
+│       └── generator.ts          # Markdown 报告
+├── public/                       # Web UI（零构建）
 ├── tests/
 ├── docs/PRD.md
-├── .env.example                  # LLM config template
+├── .env.example                  # LLM 配置模板
 ├── package.json
 └── tsconfig.json
 ```
 
-## Comparison
+## 对比
 
-| Feature | PPTAgent | ppt-master | ppt-agent-skills | **SlidePilot** |
-|---------|----------|------------|------------------|----------------|
-| Output format | PPTX | PPTX | HTML→PPTX | **HTML/PDF + HTML→PPTX** |
-| Target user | Researchers | Office users | Developers | **Non-technical** |
-| PPTX export | Yes | Yes | Yes | **Yes (screenshot-based)** |
-| Editable PowerPoint objects | Yes | Yes | Partial | **No (image-based PPTX today)** |
-| Per-page HTML | Yes | No | Yes | **Yes** |
-| Planning-first | Partial | No | Yes (JSON contract) | **Yes (JSON contract)** |
-| Browser QA | Vision LLM | No | Pixel analysis | **Pixel + Playwright** |
-| Layout repair loop | Yes | Limited | Skill-dependent | **QA-targeted failed-page repair** |
-| Real-time agent trace | Limited | No | No | **Built-in NDJSON progress stream** |
-| Prompt templates | Jinja2 | N/A | Harness + playbooks | **Markdown harness** |
-| Web UI | Gradio | N/A | N/A | **Built-in** |
-| API surface | Script/Gradio | Script | Skill runtime | **Hono REST + stream API** |
-| Test modes | Project-specific | Project-specific | Skill-specific | **Harness + API + mock E2E** |
-| LLM provider | Any | OpenAI | Any | **Any** |
-| Language | Python | Python | Python (skill) | **TypeScript** |
+| 特性 | PPTAgent | ppt-master | ppt-agent-skills | **SlidePilot** |
+|------|----------|------------|------------------|----------------|
+| 输出格式 | PPTX | PPTX | HTML→PPTX | **HTML/PDF + HTML→PPTX** |
+| 目标用户 | 研究者 | 办公用户 | 开发者 | **非技术用户** |
+| PPTX 导出 | 是 | 是 | 是 | **是（截图式）** |
+| PowerPoint 可编辑对象 | 是 | 是 | 部分 | **暂无（当前 PPTX 为图片嵌入）** |
+| 每页独立 HTML | 是 | 否 | 是 | **是** |
+| 规划先行 | 部分 | 否 | 是（JSON 合同） | **是（JSON 合同）** |
+| 浏览器 QA | Vision LLM | 无 | 像素分析 | **像素 + Playwright** |
+| 布局修复回路 | 是 | 有限 | 依赖 Skill | **按 QA 失败页定向修复** |
+| 实时 Agent 过程 | 有限 | 无 | 无 | **内置 NDJSON 进度流** |
+| Prompt 模板化 | Jinja2 | 无 | Harness + Playbook | **Markdown harness** |
+| Web UI | Gradio | 无 | 无 | **内置** |
+| API 能力 | 脚本/Gradio | 脚本 | Skill Runtime | **Hono REST + 流式 API** |
+| 测试模式 | 项目自带 | 项目自带 | Skill 自带 | **Harness + API + Mock E2E** |
+| LLM 服务商 | 任意 | OpenAI | 任意 | **任意** |
+| 开发语言 | Python | Python | Python (Skill) | **TypeScript** |
 
-SlidePilot currently optimizes for browser-verifiable HTML decks rather than native PowerPoint editing. The current path is `HTML→PNG→PPTX`: it embeds QA-verified screenshots for reliable visual fidelity. The longer-term path is a hybrid `HTML/SVG→editable PPTX` exporter that maps simple text/cards to editable PPTX shapes and keeps complex visuals as rendered images.
+SlidePilot 当前优先做“浏览器可验收的 HTML 演示文稿”，而不是原生 PowerPoint 编辑。当前路线是 `HTML→PNG→PPTX`：嵌入 QA 验收后的逐页截图，视觉还原稳定；更长期的路线是混合 `HTML/SVG→可编辑 PPTX` 导出：简单标题、正文、卡片转成可编辑 PPTX shape，复杂视觉区域保留为渲染图片。
 
-## Referenced Projects
+## 参考项目
 
-SlidePilot's architecture and roadmap were informed by these open-source PPT/slide projects:
+SlidePilot 的架构和路线参考了这些开源 PPT/Slides 项目：
 
-| Project | What SlidePilot learned from it |
-|---------|---------------------------------|
-| [PPTAgent](https://github.com/icip-cas/PPTAgent) | Multi-agent presentation generation, review loops, and PPTX-focused delivery |
-| [ppt-master](https://github.com/hugohe3/ppt-master) | Native editable PPTX direction via SVG → DrawingML conversion, template discipline, and spec locks |
-| [ppt-agent-skills](https://github.com/sunbigfly/ppt-agent-skills) | Planning contracts, density budgets, visual QA, and dual PNG/SVG PPTX export ideas |
-| [guizang-ppt-skill](https://github.com/op7418/guizang-ppt-skill) | Skill-oriented PPT generation workflow and prompt packaging |
-| [GordenPPTSkill](https://github.com/GordenSun/GordenPPTSkill) | PPT skill conventions and structured presentation generation patterns |
-| [html-ppt-skill](https://github.com/lewislulu/html-ppt-skill) | HTML-first slide generation and browser-previewable presentation output |
-| [frontend-slides](https://github.com/zarazhangrui/frontend-slides) | Frontend slide composition and visual template references |
-| [beautiful-html-templates](https://github.com/zarazhangrui/beautiful-html-templates) | HTML visual style/template references for richer slide layouts |
+| 项目 | 对 SlidePilot 的参考价值 |
+|------|--------------------------|
+| [PPTAgent](https://github.com/icip-cas/PPTAgent) | 多 Agent 演示文稿生成、审查回路、PPTX 交付思路 |
+| [ppt-master](https://github.com/hugohe3/ppt-master) | SVG → DrawingML 的原生可编辑 PPTX 路线、模板纪律、spec lock |
+| [ppt-agent-skills](https://github.com/sunbigfly/ppt-agent-skills) | planning 合同、密度预算、视觉 QA、PNG/SVG 双 PPTX 导出思路 |
+| [guizang-ppt-skill](https://github.com/op7418/guizang-ppt-skill) | Skill 化 PPT 生成工作流和 prompt 包装方式 |
+| [GordenPPTSkill](https://github.com/GordenSun/GordenPPTSkill) | PPT Skill 约定和结构化演示生成模式 |
+| [html-ppt-skill](https://github.com/lewislulu/html-ppt-skill) | HTML-first slide 生成和浏览器可预览输出 |
+| [frontend-slides](https://github.com/zarazhangrui/frontend-slides) | 前端幻灯片组合与视觉模板参考 |
+| [beautiful-html-templates](https://github.com/zarazhangrui/beautiful-html-templates) | HTML 视觉样式和模板参考 |
 
-Local reference clones live under `.packs/ppt-skills/` and are intentionally ignored by git. The current implementation has absorbed the shared patterns that fit SlidePilot's architecture: planning contracts, per-page HTML, browser/pixel QA, screenshot-based PPTX export, and template-driven layout/style ideas. The remaining native editable-object PPTX direction is tracked separately in the roadmap.
+## 路线图
 
-## Roadmap
+### 已完成
 
-### Done
+- [x] 每页独立 HTML 渲染（固定 1280×720）。
+- [x] 规划先行生成链路：需求 → 大纲 → 单页规划 JSON → HTML。
+- [x] Prompt Harness：提示词全部放在可编辑 Markdown 模板中。
+- [x] 全局样式系统：`style.json` → `global.css`。
+- [x] Web UI 实时展示 Agent 进度、工具调用、产物、QA、修复状态。
+- [x] Playwright 浏览器 QA：加载、尺寸、溢出、安全区、重叠、文本、控制台错误。
+- [x] 像素级截图 QA：空白比例、边缘裁切、低对比度、截图文件过小、疑似竖排文字。
+- [x] 针对 QA 失败页的自动修复回路。
+- [x] 多页预览组装与 PDF 导出。
+- [x] 截图式 PPTX 导出，优先保证视觉一致性。
+- [x] 单页人工修订 API 与 Web UI 控件。
+- [x] 多模态图片生成/以图改图适配器，生成资产本地保存。
+- [x] Web UI 截图画廊、QA 问题查看器、图片资产和修订历史面板。
+- [x] 生成图片策略配置和单 run 图片数量限制。
+- [x] `GET /api/runs/:runId` run 详情接口。
+- [x] API、mock pipeline、stream、revision、image adapter 测试。
+- [x] 参考项目阅读与本地 clone，目录为 `.packs/ppt-skills/`。
 
-- [x] Per-page HTML rendering with fixed 1280×720 slide files.
-- [x] Planning-first generation: requirement → outline → page planning JSON → HTML.
-- [x] Prompt Harness with editable Markdown templates.
-- [x] Global style system from `style.json` to `global.css`.
-- [x] Web UI with streaming Agent progress, tool events, artifacts, QA, and repair status.
-- [x] Browser QA with Playwright checks for load, dimensions, overflow, safe area, overlap, text, and console errors.
-- [x] Pixel-level screenshot QA for blank ratio, edge cutoff, low contrast, screenshot file size, and suspected vertical text.
-- [x] QA-targeted repair loop for failed pages.
-- [x] Per-page preview assembly plus PDF export.
-- [x] Screenshot-based PPTX export for reliable visual fidelity.
-- [x] Single-slide manual revision endpoint and Web UI controls.
-- [x] Multimodal image generation/editing adapter with local asset storage.
-- [x] API, mock pipeline, stream, revision, and image-adapter tests.
-- [x] Reference project review and local clones under `.packs/ppt-skills/`.
+### P0：当前稳定化
 
-### P0: Current Stabilization
+- [ ] 增加视觉资产策略：什么时候生图、什么时候复用、什么时候不用图。
+- [ ] 增加整套 deck 的修订入口，而不只是单页修订。
+- [ ] 增加失败页快速跳转和 QA 过滤器。
+- [ ] 增加 run 产物清理策略和磁盘配额提示。
+- [ ] 为 image-only run 增加 Web UI 预览入口。
 
-- [ ] Improve real Agent trace granularity for image/tool calls inside page generation.
-- [ ] Add visual asset selection policy: when to generate, when to reuse, and when to avoid images.
-- [ ] Add screenshot gallery and QA issue viewer in the Web UI.
-- [ ] Add persistent revision history UI using `revisions.json`.
-- [ ] Add generated-image cleanup and run artifact size limits.
+### P1：Deck 质量
 
-### P1: Deck Quality
+- [ ] 继续吸收 `frontend-slides` 和 `beautiful-html-templates` 的布局结构。
+- [ ] 扩展主题库和页面结构模板。
+- [ ] 增加图片搜索与事实型视觉素材嵌入。
+- [ ] 支持整套 deck 的多轮自然语言迭代修改。
+- [ ] 增加商务、教育、研究、产品类 deck 的模板 playbook。
 
-- [ ] Absorb more layout patterns from `frontend-slides` and `beautiful-html-templates`.
-- [ ] Expand theme library and page structure templates.
-- [ ] Add image search and embedding for factual/product/location visuals.
-- [ ] Add multi-turn natural language iterative editing across the whole deck.
-- [ ] Add template/style playbooks for business, education, research, and product decks.
+### P2：PowerPoint 路线
 
-### P2: PowerPoint Direction
+- [ ] 做混合可编辑对象 PPTX：标题、正文、卡片、简单 shape 转为 PPTX 对象。
+- [ ] 复杂视觉保留为渲染图片，简单 DOM/SVG 映射为 PPTX shape。
+- [ ] 支持 PPTX 模板导入和品牌样式抽取。
+- [ ] 增加 PPTX round-trip QA：导出 → 检查页数/图片/文本 → 报告。
 
-- [ ] Build hybrid editable-object PPTX export for simple titles, body text, cards, and shapes.
-- [ ] Keep complex visuals as rendered images while mapping simple DOM/SVG to PPTX shapes.
-- [ ] Add PPTX template ingestion and brand style extraction.
-- [ ] Add PPTX round-trip QA: export → inspect slide count/images/text → report.
+### P3：交付
 
-### P3: Delivery
+- [ ] Docker 打包。
+- [ ] CI：mock 测试、构建、Playwright smoke check。
+- [ ] 演示视频和截图画廊。
+- [ ] 公开 HTML、PDF、PPTX、图片辅助 deck 示例。
 
-- [ ] Docker packaging.
-- [ ] CI with mock tests, build, and Playwright smoke checks.
-- [ ] Demo video and screenshot gallery.
-- [ ] Public examples for HTML, PDF, PPTX, and image-assisted decks.
+## 目标用户
 
-## Contributing
+- **学生** — 课程汇报、答辩、组会分享
+- **老师** — 课件、讲义、公开课
+- **产品经理** — 需求评审、路线图、竞品分析
+- **创业者** — Pitch Deck、商业计划书
+- **研究人员** — 论文分享、技术报告
+- **开发者** — 技术分享、项目介绍
 
-Contributions welcome! See [docs/PRD.md](docs/PRD.md) for the full product requirements document.
+## 贡献
 
-## License
+欢迎贡献！完整产品需求文档见 [docs/PRD.md](docs/PRD.md)。
+
+## 许可证
 
 [MIT](LICENSE)
