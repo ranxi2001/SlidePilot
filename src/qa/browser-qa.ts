@@ -77,6 +77,95 @@ export async function runBrowserQA(options: QAOptions): Promise<QAResult> {
         checks.push({ id: "OVERFLOW", name: "overflow", status: "fail", message: `${overflow.el} exceeds bounds (bottom:${Math.round(overflow.bottom)}, right:${Math.round(overflow.right)})`, pageIndex });
       }
 
+      const unsafeBounds = await page.evaluate(() => {
+        const els = [...document.querySelectorAll("h1,h2,h3,p,ul,ol,li,.card,.metric-value,.metric-label")];
+        for (const el of els) {
+          const r = el.getBoundingClientRect();
+          const text = (el.textContent || "").trim();
+          if (!text) continue;
+          if (r.top < 8 || r.left < 8 || r.bottom > 704 || r.right > 1272) {
+            return {
+              el: el.tagName,
+              top: r.top,
+              left: r.left,
+              bottom: r.bottom,
+              right: r.right,
+              text: text.slice(0, 40),
+            };
+          }
+        }
+        return null;
+      });
+      if (unsafeBounds) {
+        checks.push({
+          id: "SAFE-AREA",
+          name: "safe_area",
+          status: "fail",
+          message: `${unsafeBounds.el} is outside safe area (top:${Math.round(unsafeBounds.top)}, left:${Math.round(unsafeBounds.left)}, bottom:${Math.round(unsafeBounds.bottom)}, right:${Math.round(unsafeBounds.right)}): ${unsafeBounds.text}`,
+          pageIndex,
+        });
+      }
+
+      const overlap = await page.evaluate(() => {
+        const candidates = [...document.querySelectorAll("h1,h2,h3,p,ul,ol,li,.card,.metric-value,.metric-label")]
+          .map((el, index) => {
+            const r = el.getBoundingClientRect();
+            const text = (el.textContent || "").replace(/\s+/g, " ").trim();
+            return {
+              index,
+              tag: el.tagName,
+              text,
+              r: { left: r.left, top: r.top, right: r.right, bottom: r.bottom, width: r.width, height: r.height },
+            };
+          })
+          .filter((item) => item.text && item.r.width > 8 && item.r.height > 8);
+
+        function area(r: any) {
+          return Math.max(0, r.right - r.left) * Math.max(0, r.bottom - r.top);
+        }
+        function intersect(a: any, b: any) {
+          const left = Math.max(a.left, b.left);
+          const right = Math.min(a.right, b.right);
+          const top = Math.max(a.top, b.top);
+          const bottom = Math.min(a.bottom, b.bottom);
+          return { left, right, top, bottom };
+        }
+        function contains(a: any, b: any) {
+          return a.left <= b.left + 1 && a.top <= b.top + 1 && a.right >= b.right - 1 && a.bottom >= b.bottom - 1;
+        }
+
+        for (let i = 0; i < candidates.length; i++) {
+          for (let j = i + 1; j < candidates.length; j++) {
+            const a = candidates[i];
+            const b = candidates[j];
+            if (contains(a.r, b.r) || contains(b.r, a.r)) continue;
+
+            const inter = intersect(a.r, b.r);
+            const interArea = area(inter);
+            if (interArea <= 80) continue;
+
+            const ratio = interArea / Math.min(area(a.r), area(b.r));
+            if (ratio > 0.18) {
+              return {
+                a: `${a.tag}: ${a.text.slice(0, 32)}`,
+                b: `${b.tag}: ${b.text.slice(0, 32)}`,
+                ratio,
+              };
+            }
+          }
+        }
+        return null;
+      });
+      if (overlap) {
+        checks.push({
+          id: "OVERLAP",
+          name: "element_overlap",
+          status: "fail",
+          message: `${overlap.a} overlaps ${overlap.b} (${Math.round(overlap.ratio * 100)}%)`,
+          pageIndex,
+        });
+      }
+
       // TEXT check — minimum text content
       const textLen = await page.evaluate(() => (document.body.textContent || "").trim().length);
       if (textLen < 5) {

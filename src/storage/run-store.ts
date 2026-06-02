@@ -18,6 +18,7 @@
  *       slide-02.png
  *     preview.html
  *     deck.pdf
+ *     deck.pptx
  *     report.md
  */
 

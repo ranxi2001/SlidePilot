@@ -28,15 +28,27 @@ import { wrapPageHTML, renderPageFromPlanning } from "../renderer/page-renderer.
 import { assemblePreview } from "../renderer/assembler.js";
 import { runBrowserQA } from "../qa/browser-qa.js";
 import { exportPdf } from "../export/pdf.js";
+import { exportPptx } from "../export/pptx.js";
 import { generateReport } from "../report/generator.js";
 import { getRunDir, saveFile, generateRunId, pageFileName, planningFileName } from "../storage/run-store.js";
 
-export type ProgressFn = (step: string, status: "start" | "done" | "error", detail?: string) => void;
+export type ProgressStatus = "start" | "done" | "error";
+export type ProgressKind = "phase" | "thought" | "tool" | "llm" | "artifact" | "qa" | "repair";
+
+export interface ProgressEventMeta {
+  kind?: ProgressKind;
+  message?: string;
+  pageIndex?: number;
+  elapsedMs?: number;
+}
+
+export type ProgressFn = (step: string, status: ProgressStatus, detail?: string, meta?: ProgressEventMeta) => void;
 
 export interface PipelineResult {
   runId: string;
   previewUrl: string;
   pdfUrl?: string;
+  pptxUrl?: string;
   qa: QAResult;
   totalPages: number;
 }
@@ -63,29 +75,57 @@ export async function runPipeline(request: CreateRequest, onProgress?: ProgressF
   const metrics: PipelineMetric[] = [];
   const useLLM = isConfigured();
 
-  progress("requirement", "start", useLLM ? "llm" : "mock");
-  const requirement = await measured(metrics, "requirement", () => buildRequirement(request, useLLM));
+  progress("requirement", "start", useLLM ? "llm" : "mock", {
+    kind: "thought",
+    message: "Analyze the prompt, infer audience and goal, then turn it into a structured deck requirement.",
+  });
+  const requirement = await measured(metrics, "requirement", () => buildRequirement(request, useLLM, progress), progress);
   const runId = generateRunId(requirement.topic || request.prompt);
   const runDir = getRunDir(runId);
   saveFile(runId, "requirement.json", JSON.stringify(requirement, null, 2));
-  progress("requirement", "done", requirement.topic);
+  progress("artifact.requirement", "done", "requirement.json", {
+    kind: "artifact",
+    message: "Saved structured requirement.",
+  });
+  progress("requirement", "done", requirement.topic, { kind: "phase" });
 
-  progress("outline", "start", useLLM ? "llm" : "mock");
-  const outline = await measured(metrics, "outline", () => buildOutline(requirement, request, useLLM));
+  progress("outline", "start", useLLM ? "llm" : "mock", {
+    kind: "thought",
+    message: "Plan the presentation storyline, page order, and page types before writing slides.",
+  });
+  const outline = await measured(metrics, "outline", () => buildOutline(requirement, request, useLLM, progress), progress);
   saveFile(runId, "outline.json", JSON.stringify(outline, null, 2));
-  progress("outline", "done", `${outline.totalPages} pages`);
+  progress("artifact.outline", "done", "outline.json", {
+    kind: "artifact",
+    message: "Saved the deck outline.",
+  });
+  progress("outline", "done", `${outline.totalPages} pages`, { kind: "phase" });
 
-  progress("style", "start", useLLM ? "llm" : "preset");
-  const styleSpec = await measured(metrics, "style", () => buildStyle(requirement, request, useLLM));
+  progress("style", "start", useLLM ? "llm" : "preset", {
+    kind: "thought",
+    message: "Choose a consistent visual system before rendering individual pages.",
+  });
+  const styleSpec = await measured(metrics, "style", () => buildStyle(requirement, request, useLLM, progress), progress);
   const globalCSS = generateGlobalCSS(styleSpec);
   saveFile(runId, "style.json", JSON.stringify(styleSpec, null, 2));
   saveFile(runId, "global.css", globalCSS);
-  progress("style", "done", styleSpec.colorScheme);
+  progress("artifact.style", "done", "style.json, global.css", {
+    kind: "artifact",
+    message: "Saved locked style assets.",
+  });
+  progress("style", "done", styleSpec.colorScheme, { kind: "phase" });
 
-  progress("pages", "start", useLLM ? `llm concurrency=${PAGE_CONCURRENCY}` : "mock");
+  progress("pages", "start", useLLM ? `llm concurrency=${PAGE_CONCURRENCY}` : "mock", {
+    kind: "phase",
+    message: "Generate page plans and page HTML with bounded parallelism.",
+  });
   const pageArtifacts = await measured(metrics, "pages", () =>
     mapConcurrent(outline.items, PAGE_CONCURRENCY, async (item) => {
-      progress("page", "start", `${item.index}/${outline.totalPages}`);
+      progress("page", "start", `${item.index}/${outline.totalPages}`, {
+        kind: "phase",
+        pageIndex: item.index,
+        message: `Start slide ${item.index}: ${item.title}`,
+      });
       const artifact = await buildPage({
         item,
         outline,
@@ -94,19 +134,31 @@ export async function runPipeline(request: CreateRequest, onProgress?: ProgressF
         runId,
         globalCSS,
         useLLM,
+        progress,
       });
-      progress("page", "done", `${item.index}/${outline.totalPages}`);
+      progress("page", "done", `${item.index}/${outline.totalPages}`, {
+        kind: "phase",
+        pageIndex: item.index,
+        message: `Finished slide ${item.index}.`,
+      });
       return artifact;
     }),
+    progress,
   );
   const sortedArtifacts = pageArtifacts.sort((a, b) => a.index - b.index);
   let pageHtmlPaths = sortedArtifacts.map((page) => page.htmlPath);
-  progress("pages", "done", `${pageHtmlPaths.length} pages`);
+  progress("pages", "done", `${pageHtmlPaths.length} pages`, { kind: "phase" });
 
-  progress("qa", "start");
+  progress("qa", "start", undefined, {
+    kind: "qa",
+    message: "Run browser QA: render every slide, capture screenshots, and check dimensions/overflow.",
+  });
   const screenshotDir = join(runDir, "png");
-  let qa = await measured(metrics, "qa.initial", () => runBrowserQA({ pagePaths: pageHtmlPaths, screenshotDir }));
-  progress("qa", qa.passed ? "done" : "error", `score: ${qa.score}`);
+  let qa = await measured(metrics, "qa.initial", () => runBrowserQA({ pagePaths: pageHtmlPaths, screenshotDir }), progress);
+  progress("qa", qa.passed ? "done" : "error", `score: ${qa.score}`, {
+    kind: "qa",
+    message: qa.passed ? "Browser QA passed." : "Browser QA found issues and repair will target failed pages.",
+  });
 
   let repairRound = 0;
   while (!qa.passed && useLLM && repairRound < MAX_REPAIR_ROUNDS) {
@@ -114,35 +166,67 @@ export async function runPipeline(request: CreateRequest, onProgress?: ProgressF
     if (failedPages.length === 0) break;
 
     repairRound++;
-    progress("repair", "start", `round ${repairRound}: ${failedPages.join(", ")}`);
+    progress("repair", "start", `round ${repairRound}: ${failedPages.join(", ")}`, {
+      kind: "repair",
+      message: "Repair only pages that failed QA instead of regenerating the whole deck.",
+    });
     await measured(metrics, `repair.round.${repairRound}`, () =>
       mapConcurrent(failedPages, REPAIR_CONCURRENCY, async (pageIndex) => {
         const artifact = sortedArtifacts.find((page) => page.index === pageIndex);
         if (!artifact) return;
-        progress("repair-page", "start", `page ${pageIndex}`);
-        await repairPage({ runId, outline, globalCSS, qa, artifact });
-        progress("repair-page", "done", `page ${pageIndex}`);
+        progress("repair-page", "start", `page ${pageIndex}`, {
+          kind: "repair",
+          pageIndex,
+          message: `Repair slide ${pageIndex} using QA failure details.`,
+        });
+        await repairPage({ runId, outline, globalCSS, qa, artifact, progress });
+        progress("repair-page", "done", `page ${pageIndex}`, {
+          kind: "repair",
+          pageIndex,
+          message: `Saved repaired slide ${pageIndex}.`,
+        });
       }),
+      progress,
     );
-    progress("repair", "done", `round ${repairRound}`);
+    progress("repair", "done", `round ${repairRound}`, { kind: "repair" });
 
     pageHtmlPaths = sortedArtifacts.map((page) => page.htmlPath);
-    progress("qa", "start", `after repair ${repairRound}`);
-    qa = await measured(metrics, `qa.repair.${repairRound}`, () => runBrowserQA({ pagePaths: pageHtmlPaths, screenshotDir }));
-    progress("qa", qa.passed ? "done" : "error", `score: ${qa.score}`);
+    progress("qa", "start", `after repair ${repairRound}`, {
+      kind: "qa",
+      message: "Re-run browser QA after repair.",
+    });
+    qa = await measured(metrics, `qa.repair.${repairRound}`, () => runBrowserQA({ pagePaths: pageHtmlPaths, screenshotDir }), progress);
+    progress("qa", qa.passed ? "done" : "error", `score: ${qa.score}`, { kind: "qa" });
   }
 
-  progress("assemble", "start");
+  progress("assemble", "start", undefined, {
+    kind: "tool",
+    message: "Assemble slide HTML files into a keyboard-navigable preview.",
+  });
   const previewHtml = assemblePreview(pageHtmlPaths, outline.title);
   saveFile(runId, "preview.html", previewHtml);
-  progress("assemble", "done");
+  progress("assemble", "done", "preview.html", { kind: "artifact" });
 
-  progress("pdf", "start");
+  progress("pdf", "start", undefined, {
+    kind: "tool",
+    message: "Export the deck to PDF with Playwright.",
+  });
   const pdfPath = join(runDir, "deck.pdf");
-  const pdfResult = await measured(metrics, "pdf", () => exportPdf({ pagePaths: pageHtmlPaths, outputPath: pdfPath }));
-  progress("pdf", pdfResult.success ? "done" : "error", pdfResult.error);
+  const pdfResult = await measured(metrics, "pdf", () => exportPdf({ pagePaths: pageHtmlPaths, outputPath: pdfPath }), progress);
+  progress("pdf", pdfResult.success ? "done" : "error", pdfResult.error || "deck.pdf", { kind: "artifact" });
 
-  progress("report", "start");
+  progress("pptx", "start", undefined, {
+    kind: "tool",
+    message: "Export the deck to PPTX by embedding verified slide screenshots.",
+  });
+  const pptxPath = join(runDir, "deck.pptx");
+  const pptxResult = await measured(metrics, "pptx", () => exportPptx({ screenshotPaths: qa.screenshots, outputPath: pptxPath }), progress);
+  progress("pptx", pptxResult.success ? "done" : "error", pptxResult.error || "deck.pptx", { kind: "artifact" });
+
+  progress("report", "start", undefined, {
+    kind: "tool",
+    message: "Write the generation report and run manifest.",
+  });
   const report = generateReport({
     runId,
     topic: outline.title,
@@ -150,9 +234,10 @@ export async function runPipeline(request: CreateRequest, onProgress?: ProgressF
     style: request.style,
     qa,
     pdfPath: pdfResult.success ? pdfPath : undefined,
+    pptxPath: pptxResult.success ? pptxPath : undefined,
   });
   saveFile(runId, "report.md", report);
-  progress("report", "done");
+  progress("report", "done", "report.md", { kind: "artifact" });
 
   saveFile(runId, "metrics.json", JSON.stringify(metrics, null, 2));
   saveFile(runId, "manifest.json", JSON.stringify({
@@ -175,6 +260,7 @@ export async function runPipeline(request: CreateRequest, onProgress?: ProgressF
       })),
       previewHtml: "preview.html",
       pdf: pdfResult.success ? "deck.pdf" : undefined,
+      pptx: pptxResult.success ? "deck.pptx" : undefined,
     },
   }, null, 2));
 
@@ -182,20 +268,31 @@ export async function runPipeline(request: CreateRequest, onProgress?: ProgressF
     runId,
     previewUrl: `/runs/${runId}/preview.html`,
     pdfUrl: pdfResult.success ? `/runs/${runId}/deck.pdf` : undefined,
+    pptxUrl: pptxResult.success ? `/runs/${runId}/deck.pptx` : undefined,
     qa,
     totalPages: outline.totalPages,
   };
 }
 
-async function buildRequirement(request: CreateRequest, useLLM: boolean): Promise<RequirementSpec> {
+async function buildRequirement(request: CreateRequest, useLLM: boolean, progress: ProgressFn): Promise<RequirementSpec> {
   if (!useLLM) return fallbackRequirement(request);
 
   try {
+    progress("tool.template.requirement", "start", "requirement.md", {
+      kind: "tool",
+      message: "Render requirement prompt template.",
+    });
     const prompt = renderTemplate("requirement", {
       USER_PROMPT: request.prompt,
       LANGUAGE: request.language,
     });
+    progress("tool.template.requirement", "done", `${prompt.length} chars`, { kind: "tool" });
+    progress("llm.requirement", "start", "structured JSON", {
+      kind: "llm",
+      message: "Call the model to extract structured requirements.",
+    });
     const parsed = requirementSpecSchema.parse(await chatJSON([{ role: "user", content: prompt }]));
+    progress("llm.requirement", "done", parsed.topic, { kind: "llm" });
     return {
       ...parsed,
       pageCount: request.pages,
@@ -210,10 +307,14 @@ async function buildRequirement(request: CreateRequest, useLLM: boolean): Promis
   }
 }
 
-async function buildOutline(requirement: RequirementSpec, request: CreateRequest, useLLM: boolean): Promise<Outline> {
+async function buildOutline(requirement: RequirementSpec, request: CreateRequest, useLLM: boolean, progress: ProgressFn): Promise<Outline> {
   if (!useLLM) return generateMockOutline(requirement.topic, request.pages);
 
   try {
+    progress("tool.template.outline", "start", "outline.md", {
+      kind: "tool",
+      message: "Render outline prompt template.",
+    });
     const prompt = renderTemplate("outline", {
       TOPIC: requirement.topic,
       AUDIENCE: requirement.audience,
@@ -222,23 +323,38 @@ async function buildOutline(requirement: RequirementSpec, request: CreateRequest
       LANGUAGE: requirement.language,
       TONE: requirement.tone,
     });
+    progress("tool.template.outline", "done", `${prompt.length} chars`, { kind: "tool" });
+    progress("llm.outline", "start", `${request.pages} pages`, {
+      kind: "llm",
+      message: "Call the model to create the storyline and page sequence.",
+    });
     const parsed = outlineSchema.parse(await chatJSON([{ role: "user", content: prompt }]));
+    progress("llm.outline", "done", `${parsed.items.length} items`, { kind: "llm" });
     return normalizeOutline(parsed, request.pages);
   } catch {
     return generateMockOutline(requirement.topic, request.pages);
   }
 }
 
-async function buildStyle(requirement: RequirementSpec, request: CreateRequest, useLLM: boolean): Promise<StyleSpec> {
+async function buildStyle(requirement: RequirementSpec, request: CreateRequest, useLLM: boolean, progress: ProgressFn): Promise<StyleSpec> {
   const fallback = PRESET_STYLES[request.style] || PRESET_STYLES["tech-dark"];
   if (!useLLM) return fallback;
 
   try {
+    progress("tool.template.style", "start", "style.md", {
+      kind: "tool",
+      message: "Render style prompt template.",
+    });
     const prompt = renderTemplate("style", {
       TOPIC: requirement.topic,
       AUDIENCE: requirement.audience,
       STYLE_HINT: request.style || requirement.style,
       COLOR_SCHEME: fallback.colorScheme,
+    });
+    progress("tool.template.style", "done", `${prompt.length} chars`, { kind: "tool" });
+    progress("llm.style", "start", request.style, {
+      kind: "llm",
+      message: "Call the model to define the global style system.",
     });
     return styleSpecSchema.parse(await chatJSON([{ role: "user", content: prompt }]));
   } catch {
@@ -254,33 +370,44 @@ async function buildPage(options: {
   runId: string;
   globalCSS: string;
   useLLM: boolean;
+  progress: ProgressFn;
 }): Promise<PageArtifact> {
-  const { item, outline, requirement, request, runId, globalCSS, useLLM } = options;
+  const { item, outline, requirement, request, runId, globalCSS, useLLM, progress } = options;
   let planning: PagePlanning;
   let innerHTML: string;
 
   try {
     planning = useLLM
-      ? await generatePagePlanning(item, outline, requirement)
+      ? await generatePagePlanning(item, outline, requirement, progress)
       : generateMockPlanning(item.index, item, outline);
   } catch {
     planning = generateMockPlanning(item.index, item, outline);
   }
 
   saveFile(runId, `planning/${planningFileName(item.index)}`, JSON.stringify(planning, null, 2));
+  progress("artifact.planning", "done", `planning/${planningFileName(item.index)}`, {
+    kind: "artifact",
+    pageIndex: item.index,
+    message: `Saved slide ${item.index} planning JSON.`,
+  });
 
   try {
-    innerHTML = useLLM ? await generatePageHTML(planning) : renderPageFromPlanning(planning);
+    innerHTML = useLLM ? await generatePageHTML(planning, progress) : renderPageFromPlanning(planning);
   } catch {
     innerHTML = renderPageFromPlanning(planning);
   }
 
   const fullHTML = wrapPageHTML(innerHTML, globalCSS, item.index, outline.totalPages);
   const htmlPath = saveFile(runId, `slides/${pageFileName(item.index, "html")}`, fullHTML);
+  progress("artifact.slide", "done", `slides/${pageFileName(item.index, "html")}`, {
+    kind: "artifact",
+    pageIndex: item.index,
+    message: `Saved slide ${item.index} HTML.`,
+  });
   return { index: item.index, htmlPath, planning };
 }
 
-async function generatePagePlanning(item: OutlineItem, outline: Outline, requirement: RequirementSpec): Promise<PagePlanning> {
+async function generatePagePlanning(item: OutlineItem, outline: Outline, requirement: RequirementSpec, progress: ProgressFn): Promise<PagePlanning> {
   const outlineContext = JSON.stringify(outline.items.map(({ index, title, purpose, pageType, density }) => ({
     index,
     title,
@@ -289,6 +416,11 @@ async function generatePagePlanning(item: OutlineItem, outline: Outline, require
     density,
   })), null, 2);
 
+  progress("tool.template.page-planning", "start", `page ${item.index}`, {
+    kind: "tool",
+    pageIndex: item.index,
+    message: "Render page-planning prompt template.",
+  });
   const prompt = renderTemplate("page-planning", {
     DECK_TITLE: outline.title,
     PAGE_INDEX: String(item.index),
@@ -302,8 +434,21 @@ async function generatePagePlanning(item: OutlineItem, outline: Outline, require
     MAX_BULLETS: "5",
     MAX_CARDS: "4",
   });
+  progress("tool.template.page-planning", "done", `${prompt.length} chars`, {
+    kind: "tool",
+    pageIndex: item.index,
+  });
 
+  progress("llm.page-planning", "start", `page ${item.index}`, {
+    kind: "llm",
+    pageIndex: item.index,
+    message: "Call the model to plan slide content blocks and layout.",
+  });
   const parsed = pagePlanningSchema.parse(await chatJSON([{ role: "user", content: prompt }]));
+  progress("llm.page-planning", "done", `${parsed.contentBlocks.length} blocks`, {
+    kind: "llm",
+    pageIndex: item.index,
+  });
   return {
     ...parsed,
     pageIndex: item.index,
@@ -312,12 +457,31 @@ async function generatePagePlanning(item: OutlineItem, outline: Outline, require
   };
 }
 
-async function generatePageHTML(planning: PagePlanning): Promise<string> {
+async function generatePageHTML(planning: PagePlanning, progress: ProgressFn): Promise<string> {
+  progress("tool.template.page-html", "start", `page ${planning.pageIndex}`, {
+    kind: "tool",
+    pageIndex: planning.pageIndex,
+    message: "Render page HTML prompt template.",
+  });
   const prompt = renderTemplate("page-html", {
     PAGE_PLANNING_JSON: JSON.stringify(planning, null, 2),
   });
+  progress("tool.template.page-html", "done", `${prompt.length} chars`, {
+    kind: "tool",
+    pageIndex: planning.pageIndex,
+  });
+  progress("llm.page-html", "start", `page ${planning.pageIndex}`, {
+    kind: "llm",
+    pageIndex: planning.pageIndex,
+    message: "Call the model to produce slide inner HTML.",
+  });
   const raw = await chat([{ role: "user", content: prompt }]);
-  return stripToInnerHTML(raw);
+  const html = stripToInnerHTML(raw);
+  progress("llm.page-html", "done", `${html.length} chars`, {
+    kind: "llm",
+    pageIndex: planning.pageIndex,
+  });
+  return html;
 }
 
 async function repairPage(options: {
@@ -326,21 +490,40 @@ async function repairPage(options: {
   globalCSS: string;
   qa: QAResult;
   artifact: PageArtifact;
+  progress: ProgressFn;
 }): Promise<void> {
-  const { runId, outline, globalCSS, qa, artifact } = options;
+  const { runId, outline, globalCSS, qa, artifact, progress } = options;
   const currentHTML = extractBodyInnerHTML(readFileSync(artifact.htmlPath, "utf-8"));
   const failures = qa.checks
     .filter((check) => check.pageIndex === artifact.index)
     .map(formatQACheck)
     .join("\n");
 
+  progress("tool.template.repair", "start", `page ${artifact.index}`, {
+    kind: "tool",
+    pageIndex: artifact.index,
+    message: "Render repair prompt with current HTML and QA failures.",
+  });
   const prompt = renderTemplate("repair", {
     CURRENT_HTML: currentHTML,
     QA_FAILURE: failures,
     PAGE_PLANNING_JSON: JSON.stringify(artifact.planning, null, 2),
   });
+  progress("tool.template.repair", "done", `${prompt.length} chars`, {
+    kind: "tool",
+    pageIndex: artifact.index,
+  });
 
+  progress("llm.repair", "start", `page ${artifact.index}`, {
+    kind: "llm",
+    pageIndex: artifact.index,
+    message: "Call the model to repair the failed slide layout.",
+  });
   const repaired = stripToInnerHTML(await chat([{ role: "user", content: prompt }]));
+  progress("llm.repair", "done", `${repaired.length} chars`, {
+    kind: "llm",
+    pageIndex: artifact.index,
+  });
   artifact.htmlPath = saveFile(
     runId,
     `slides/${pageFileName(artifact.index, "html")}`,
@@ -419,14 +602,26 @@ function extractBodyInnerHTML(fullHTML: string): string {
   return body.replace(/<span class="page-number">[\s\S]*?<\/span>/g, "").trim();
 }
 
-async function measured<T>(metrics: PipelineMetric[], name: string, fn: () => Promise<T>): Promise<T> {
+async function measured<T>(metrics: PipelineMetric[], name: string, fn: () => Promise<T>, progress?: ProgressFn): Promise<T> {
   const start = Date.now();
   try {
     const result = await fn();
-    metrics.push({ name, elapsedMs: Date.now() - start, ok: true });
+    const elapsedMs = Date.now() - start;
+    metrics.push({ name, elapsedMs, ok: true });
+    progress?.(`metric.${name}`, "done", `${elapsedMs}ms`, {
+      kind: "tool",
+      elapsedMs,
+      message: `Finished ${name}.`,
+    });
     return result;
   } catch (err) {
-    metrics.push({ name, elapsedMs: Date.now() - start, ok: false, detail: String(err).slice(0, 300) });
+    const elapsedMs = Date.now() - start;
+    metrics.push({ name, elapsedMs, ok: false, detail: String(err).slice(0, 300) });
+    progress?.(`metric.${name}`, "error", `${elapsedMs}ms`, {
+      kind: "tool",
+      elapsedMs,
+      message: String(err).slice(0, 300),
+    });
     throw err;
   }
 }

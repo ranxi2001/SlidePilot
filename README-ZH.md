@@ -17,7 +17,7 @@
 
 ---
 
-**SlidePilot** 是一个开源 AI 演示文稿智能体，能将主题、大纲或文档自动转化为专业 HTML 演示文稿——包含浏览器自动验收、视觉修复和 PDF 导出。无需 PowerPoint，无需写代码，无需设计能力。
+**SlidePilot** 是一个开源 AI 演示文稿智能体，能将主题、大纲或文档自动转化为专业 HTML 演示文稿——包含浏览器自动验收、视觉修复、PDF 导出和截图式 PPTX 导出。无需 PowerPoint，无需写代码，无需设计能力。
 
 与传统 PPT 生成工具只做"文本填充"不同，SlidePilot 将演示文稿创建视为**完整的 Agent 工作流**：理解需求 → 规划叙事 → 锁定风格 → 渲染页面 → 自动验收 → 修复缺陷 → 导出交付。
 
@@ -28,7 +28,7 @@
 | 生成的页面千篇一律 | **规划先行**：每页有结构化内容预算和布局合同，再生成 HTML |
 | 生成后没有视觉检查 | **Playwright QA**：自动检测溢出、空白、尺寸异常 |
 | 各页风格不统一 | **全局样式锁**：一份 `style.json` → `global.css`，全 deck 统一 |
-| 不会写代码就无法迭代 | **浏览器 UI**：输入需求、预览结果、下载 PDF，零门槛 |
+| 不会写代码就无法迭代 | **浏览器 UI**：输入需求、预览结果、下载 PDF/PPTX，零门槛 |
 | 绑定单一 LLM 服务商 | **任意 OpenAI 兼容 API**：OpenAI、DeepSeek、Ollama、vLLM 等 |
 | Prompt 写死在代码里 | **Prompt Harness**：所有提示词为可编辑的 `.md` 模板文件 |
 
@@ -46,6 +46,7 @@
 ✓ 页面渲染完成（10/10）
 ✓ 浏览器 QA 通过（score: 1.0）
 ✓ PDF 导出成功
+✓ PPTX 导出成功
 
 预览: http://127.0.0.1:4321/runs/{id}/preview.html
 ```
@@ -83,7 +84,7 @@ cp .env.example .env
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  浏览器 (Web UI)                                             │
-│  输入需求 → 实时进度 → 预览 (iframe) → 下载 PDF               │
+│  输入需求 → 实时进度 → 预览 (iframe) → 下载 PDF/PPTX          │
 └──────────────────────────────┬──────────────────────────────┘
                                │ POST /api/create
 ┌──────────────────────────────▼──────────────────────────────┐
@@ -99,7 +100,7 @@ cp .env.example .env
 │                              └────┬────┘  └─────────────┘  │
 │                                   │                         │
 │                    ┌──────────────▼──────────────┐          │
-│                    │   组装预览 + PDF 导出        │          │
+│                    │   组装预览 + PDF/PPTX 导出    │          │
 │                    └─────────────────────────────┘          │
 └─────────────────────────────────────────────────────────────┘
                                │
@@ -114,6 +115,7 @@ cp .env.example .env
 │  ├── png/*.png           — 每页截图                          │
 │  ├── preview.html        — 组装后的演示 deck                  │
 │  ├── deck.pdf            — 可打印 PDF                        │
+│  ├── deck.pptx           — 截图式 PPTX                        │
 │  └── report.md           — QA 报告                           │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -178,6 +180,7 @@ QA 失败的页面进入**修复循环**（最多 3 轮），LLM 根据 QA 反�
 | 浏览器自动化 | Playwright |
 | LLM 接口 | OpenAI SDK（任意兼容 API） |
 | PDF 导出 | Playwright Print |
+| PPTX 导出 | PptxGenJS（整页 PNG 嵌入） |
 
 ## 项目结构
 
@@ -201,7 +204,8 @@ SlidePilot/
 │   ├── qa/
 │   │   └── browser-qa.ts         # Playwright 视觉检查
 │   ├── export/
-│   │   └── pdf.ts                # 逐页 PDF 合并
+│   │   ├── pdf.ts                # 逐页 PDF 合并
+│   │   └── pptx.ts               # 截图式 PPTX 导出
 │   ├── storage/
 │   │   └── run-store.ts          # 产物持久化
 │   └── report/
@@ -218,15 +222,38 @@ SlidePilot/
 
 | 特性 | PPTAgent | ppt-master | ppt-agent-skills | **SlidePilot** |
 |------|----------|------------|------------------|----------------|
-| 输出格式 | PPTX | PPTX | HTML→PPTX | **HTML/PDF** |
+| 输出格式 | PPTX | PPTX | HTML→PPTX | **HTML/PDF + HTML→PPTX** |
 | 目标用户 | 研究者 | 办公用户 | 开发者 | **非技术用户** |
-| 浏览器 QA | Vision LLM | 无 | 像素分析 | **像素 + Playwright** |
+| PPTX 导出 | 是 | 是 | 是 | **是（截图式）** |
+| PowerPoint 可编辑对象 | 是 | 是 | 部分 | **暂无（当前 PPTX 为图片嵌入）** |
 | 每页独立 HTML | 是 | 否 | 是 | **是** |
-| 规划先行 | 否 | 否 | 是（JSON 合同） | **是** |
-| Prompt 模板化 | Jinja2 | 无 | Harness + Playbook | **Markdown Harness** |
+| 规划先行 | 部分 | 否 | 是（JSON 合同） | **是（JSON 合同）** |
+| 浏览器 QA | Vision LLM | 无 | 像素分析 | **像素 + Playwright** |
+| 布局修复回路 | 是 | 有限 | 依赖 Skill | **按 QA 失败页定向修复** |
+| 实时 Agent 过程 | 有限 | 无 | 无 | **内置 NDJSON 进度流** |
+| Prompt 模板化 | Jinja2 | 无 | Harness + Playbook | **Markdown harness** |
 | Web UI | Gradio | 无 | 无 | **内置** |
+| API 能力 | 脚本/Gradio | 脚本 | Skill Runtime | **Hono REST + 流式 API** |
+| 测试模式 | 项目自带 | 项目自带 | Skill 自带 | **Harness + API + Mock E2E** |
 | LLM 服务商 | 任意 | OpenAI | 任意 | **任意** |
 | 开发语言 | Python | Python | Python (Skill) | **TypeScript** |
+
+SlidePilot 当前优先做“浏览器可验收的 HTML 演示文稿”，而不是原生 PowerPoint 编辑。当前路线是 `HTML→PNG→PPTX`：嵌入 QA 验收后的逐页截图，视觉还原稳定；更长期的路线是混合 `HTML/SVG→可编辑 PPTX` 导出：简单标题、正文、卡片转成可编辑 PPTX shape，复杂视觉区域保留为渲染图片。
+
+## 参考项目
+
+SlidePilot 的架构和路线参考了这些开源 PPT/Slides 项目：
+
+| 项目 | 对 SlidePilot 的参考价值 |
+|------|--------------------------|
+| [PPTAgent](https://github.com/icip-cas/PPTAgent) | 多 Agent 演示文稿生成、审查回路、PPTX 交付思路 |
+| [ppt-master](https://github.com/hugohe3/ppt-master) | SVG → DrawingML 的原生可编辑 PPTX 路线、模板纪律、spec lock |
+| [ppt-agent-skills](https://github.com/sunbigfly/ppt-agent-skills) | planning 合同、密度预算、视觉 QA、PNG/SVG 双 PPTX 导出思路 |
+| [guizang-ppt-skill](https://github.com/op7418/guizang-ppt-skill) | Skill 化 PPT 生成工作流和 prompt 包装方式 |
+| [GordenPPTSkill](https://github.com/GordenSun/GordenPPTSkill) | PPT Skill 约定和结构化演示生成模式 |
+| [html-ppt-skill](https://github.com/lewislulu/html-ppt-skill) | HTML-first slide 生成和浏览器可预览输出 |
+| [frontend-slides](https://github.com/zarazhangrui/frontend-slides) | 前端幻灯片组合与视觉模板参考 |
+| [beautiful-html-templates](https://github.com/zarazhangrui/beautiful-html-templates) | HTML 视觉样式和模板参考 |
 
 ## 路线图
 
@@ -235,13 +262,15 @@ SlidePilot/
 - [x] 全局样式系统（StyleSpec → CSS）
 - [x] Playwright 浏览器 QA
 - [x] 逐页 PDF 导出
+- [x] 截图式 PPTX 导出
 - [x] Prompt Harness（模板化提示词）
-- [x] Web UI 骨架
-- [ ] 完整 LLM 接入（大纲 → 规划 → HTML）
-- [ ] SSE 实时进度推送
+- [x] Web UI
+- [x] 完整 LLM 接入（大纲 → 规划 → HTML）
+- [x] Web UI 实时进度推送
+- [x] API + Mock 管线测试
 - [ ] 自然语言迭代修改
 - [ ] 图片搜索与嵌入
-- [ ] PPTX 导出
+- [ ] 可编辑对象 PPTX 导出
 - [ ] 更多主题与布局类型
 - [ ] Docker 部署
 - [ ] 演示视频与截图

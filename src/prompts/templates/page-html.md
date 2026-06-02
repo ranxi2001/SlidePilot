@@ -28,4 +28,8 @@ Rules:
 8. No JavaScript.
 9. Prefer flexbox for simple layouts and grid for cards/metrics.
 10. For dense pages, reduce copy before shrinking below readable sizes; no block should rely on scrolling.
-11. Keep it clean: whitespace is good, less is more.
+11. Avoid absolute positioning unless it is only decorative. Main content should use normal flex/grid flow.
+12. Do not let labels, dots, lines, icons, cards, or list items overlap. Reserve at least 8px vertical and horizontal gap between text blocks.
+13. Timeline layouts must put text below or beside markers with clear spacing; markers and horizontal lines must never cover text.
+14. Visual diagrams must stay inside a single bounded area and must not drift over adjacent cards, bullets, or headings.
+15. Keep it clean: whitespace is good, less is more.

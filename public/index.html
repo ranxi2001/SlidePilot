@@ -8,35 +8,74 @@
 </head>
 <body>
   <div id="app">
-    <header>
-      <h1>SlidePilot</h1>
-      <p class="tagline">描述你的想法，获得专业演示文稿</p>
+    <header class="app-header">
+      <div>
+        <h1>SlidePilot</h1>
+        <p class="tagline">把想法变成可预览、可导出的演示文稿</p>
+      </div>
+      <div id="status-pill" class="status-pill">未连接</div>
     </header>
 
-    <main>
+    <main class="workspace">
       <section class="input-panel">
-        <textarea id="prompt" rows="4" placeholder="例如：帮我做一个 8 页 PPT，主题是 AI Agent 如何改变软件开发，面向产品经理，风格商务科技"></textarea>
+        <label for="prompt">演示需求</label>
+        <textarea id="prompt" rows="5" placeholder="例如：帮我做一份 8 页中文演示文稿，主题是 AI Agent 如何改造企业流程自动化，面向 SaaS 管理层，风格科技专业。"></textarea>
+
         <div class="options">
-          <select id="style">
-            <option value="modern-light">现代明亮</option>
-            <option value="tech-dark">科技暗色</option>
-            <option value="minimal">极简</option>
-          </select>
-          <input id="pages" type="number" value="8" min="4" max="20">
+          <label>
+            风格
+            <select id="style">
+              <option value="tech-dark">科技深色</option>
+              <option value="modern-light">现代明亮</option>
+              <option value="minimal">极简</option>
+            </select>
+          </label>
+          <label>
+            页数
+            <input id="pages" type="number" value="8" min="4" max="20">
+          </label>
         </div>
+
         <button id="btn-create">生成演示文稿</button>
       </section>
 
-      <section id="progress-panel" hidden>
-        <ul id="progress-list"></ul>
+      <section id="agent-panel" class="agent-panel" hidden>
+        <div class="panel-header">
+          <div>
+            <h2>Agent 运行过程</h2>
+            <p id="agent-summary">等待开始</p>
+          </div>
+          <div class="run-stats">
+            <span id="stat-elapsed">0.0s</span>
+            <span id="stat-events">0 events</span>
+          </div>
+        </div>
+
+        <div class="stage-grid" id="stage-grid"></div>
+
+        <div class="event-toolbar">
+          <span>实时事件</span>
+          <label><input id="filter-llm" type="checkbox" checked> LLM</label>
+          <label><input id="filter-tool" type="checkbox" checked> 工具</label>
+          <label><input id="filter-artifact" type="checkbox" checked> 产物</label>
+          <label><input id="filter-qa" type="checkbox" checked> QA</label>
+        </div>
+        <ol id="event-list" class="event-list"></ol>
       </section>
 
-      <section id="preview-panel" hidden>
-        <iframe id="preview-frame"></iframe>
-        <div class="actions">
-          <a id="btn-pdf" class="btn" download>下载 PDF</a>
-          <a id="btn-html" class="btn" download>下载 HTML</a>
+      <section id="preview-panel" class="preview-panel" hidden>
+        <div class="panel-header">
+          <div>
+            <h2>生成结果</h2>
+            <p id="result-summary">预览已就绪</p>
+          </div>
+          <div class="actions">
+            <a id="btn-pptx" class="btn" download hidden>下载 PPTX</a>
+            <a id="btn-pdf" class="btn" download hidden>下载 PDF</a>
+            <a id="btn-html" class="btn" download>下载 HTML</a>
+          </div>
         </div>
+        <iframe id="preview-frame" title="Slide preview"></iframe>
       </section>
     </main>
   </div>

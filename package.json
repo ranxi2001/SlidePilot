@@ -7,7 +7,11 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "test": "vitest"
+    "test": "vitest",
+    "test:run": "vitest --run",
+    "test:harness": "vitest --run tests/harness.test.ts",
+    "test:api": "vitest --run tests/api.test.ts",
+    "test:mock": "vitest --run tests/pipeline.mock.test.ts"
   },
   "dependencies": {
     "@hono/node-server": "^1.11",
@@ -16,6 +20,7 @@
     "nunjucks": "^3.2",
     "openai": "^4.50",
     "playwright": "^1.44",
+    "pptxgenjs": "^4.0.1",
     "zod": "^3.23"
   },
   "devDependencies": {
