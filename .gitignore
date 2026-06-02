@@ -13,3 +13,4 @@ screenshots/
 *.env
 .claude/skills/local-dev
 .DS_Store
+.packs/
