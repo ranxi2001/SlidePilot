@@ -15,6 +15,7 @@ const app = new Hono();
 
 app.route("/api", apiRoutes);
 app.use("/public/*", serveStatic({ root: ROOT }));
+app.use("/runs/*", serveStatic({ root: process.cwd() }));
 app.get("/", (c) => {
   const html = readFileSync(join(ROOT, "public", "index.html"), "utf-8");
   return c.html(html);
