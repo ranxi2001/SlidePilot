@@ -1,0 +1,23 @@
+[project]
+name = "slidepilot"
+version = "0.1.0"
+description = "Result-first HTML Presentation Agent for non-technical users."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+  { name = "ranxi2001", email = "ranxi169@163.com" }
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/ranxi2001/SlidePilot"
+Repository = "https://github.com/ranxi2001/SlidePilot"
+Documentation = "https://github.com/ranxi2001/SlidePilot/blob/main/docs/PRD.md"
+
+[tool.ruff]
+line-length = 100
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
