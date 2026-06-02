@@ -124,7 +124,7 @@ apiRoutes.post("/create-stream", async (c) => {
 });
 
 apiRoutes.post("/runs/:runId/slides/:pageIndex/revise", async (c) => {
-  const runId = c.req.param("runId");
+  const runId = decodeRunId(c.req.param("runId"));
   const pageIndex = Number(c.req.param("pageIndex"));
   if (!Number.isInteger(pageIndex) || pageIndex < 1) {
     return c.json({ error: "Invalid page index." }, 400);
@@ -201,7 +201,7 @@ apiRoutes.get("/runs", (c) => {
 });
 
 apiRoutes.get("/runs/:runId", (c) => {
-  const runId = c.req.param("runId");
+  const runId = decodeRunId(c.req.param("runId"));
   try {
     return c.json(readRunDetail(runId));
   } catch (err) {
@@ -216,6 +216,18 @@ function toPublicImages(images: Array<{ runId: string; url: string; model: strin
     model: image.model,
     size: image.size,
   }));
+}
+
+function decodeRunId(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+function runAssetUrl(runId: string, ...parts: string[]): string {
+  return `/runs/${encodeURIComponent(runId)}/${parts.map((part) => encodeURIComponent(part)).join("/")}`;
 }
 
 function stringField(value: unknown): string {
@@ -278,10 +290,10 @@ function readRunDetail(runId: string) {
     createdAt: manifest.createdAt,
     updatedAt: manifest.updatedAt || null,
     artifacts: {
-      previewUrl: existsSync(join(runDir, "preview.html")) ? `/runs/${runId}/preview.html` : null,
-      pdfUrl: existsSync(join(runDir, "deck.pdf")) ? `/runs/${runId}/deck.pdf` : null,
-      pptxUrl: existsSync(join(runDir, "deck.pptx")) ? `/runs/${runId}/deck.pptx` : null,
-      reportUrl: existsSync(join(runDir, "report.md")) ? `/runs/${runId}/report.md` : null,
+      previewUrl: existsSync(join(runDir, "preview.html")) ? runAssetUrl(runId, "preview.html") : null,
+      pdfUrl: existsSync(join(runDir, "deck.pdf")) ? runAssetUrl(runId, "deck.pdf") : null,
+      pptxUrl: existsSync(join(runDir, "deck.pptx")) ? runAssetUrl(runId, "deck.pptx") : null,
+      reportUrl: existsSync(join(runDir, "report.md")) ? runAssetUrl(runId, "report.md") : null,
     },
     qa,
     screenshots,
@@ -309,7 +321,7 @@ function listFiles(runDir: string, relativeDir: string, extensions: string[]) {
       const path = join(dir, entry.name);
       return {
         name: entry.name,
-        url: `/runs/${runDir.split(/[\\/]/).pop()}/${relativeDir}/${entry.name}`,
+        url: runAssetUrl(runDir.split(/[\\/]/).pop() || "", relativeDir, entry.name),
         bytes: statSync(path).size,
       };
     });

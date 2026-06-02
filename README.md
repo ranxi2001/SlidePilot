@@ -52,10 +52,13 @@
 预览: http://127.0.0.1:4321/runs/{id}/preview.html
 ```
 
-### Agent 运行过程
+### Agent 工作台
 
-<img src="docs/assets/readme/agent-trace.png" width="100%" alt="SlidePilot Agent 运行过程" />
-<img src="docs/assets/readme/agent-repair.png" width="100%" alt="SlidePilot Agent 修复回路" />
+<p>实时展示模型调用、工具执行、QA、修复回路、截图与单页修订，不展示私有思维链。</p>
+
+<img src="docs/assets/readme/ui-live-run.png" width="100%" alt="SlidePilot 实时 Agent 工作台" />
+<img src="docs/assets/readme/ui-repair-run.png" width="100%" alt="SlidePilot QA 修复回路" />
+<img src="docs/assets/readme/ui-qa-panel.png" width="100%" alt="SlidePilot QA 与截图面板" />
 
 ### 生成效果
 

@@ -9,41 +9,97 @@
 <body>
   <div id="app">
     <header class="app-header">
-      <div>
+      <div class="brand-block">
+        <p class="eyebrow">AI Presentation Agent</p>
         <h1>SlidePilot</h1>
         <p class="tagline">把想法变成可预览、可导出的演示文稿</p>
       </div>
-      <div id="status-pill" class="status-pill">未连接</div>
+      <div class="header-status">
+        <span id="run-pill" class="status-pill run">空闲</span>
+        <span id="status-pill" class="status-pill">未连接</span>
+      </div>
     </header>
 
     <main class="workspace">
-      <section class="input-panel">
-        <label for="prompt">演示需求</label>
-        <textarea id="prompt" rows="5" placeholder="例如：帮我做一份 8 页中文演示文稿，主题是 AI Agent 如何改造企业流程自动化，面向 SaaS 管理层，风格科技专业。"></textarea>
+      <section class="command-panel" aria-label="演示文稿生成命令">
+        <div class="panel-title">
+          <div>
+            <h2>演示需求</h2>
+            <p>描述主题、受众、页数和重点，Agent 会规划、生成、QA、导出。</p>
+          </div>
+        </div>
+
+        <label class="field" for="prompt">
+          <span>需求描述</span>
+          <textarea id="prompt" rows="6" placeholder="例如：帮我做一份 8 页中文演示文稿，主题是 AI Agent 如何改造企业流程自动化，面向 SaaS 管理层，风格科技专业。"></textarea>
+        </label>
+
+        <div class="prompt-chips" aria-label="示例需求">
+          <button type="button" class="chip" data-prompt="帮我做一个 4 页 PPT，介绍 Harness 工程：概念、为什么要做、核心模块、落地路线。">Harness 工程 4 页</button>
+          <button type="button" class="chip" data-prompt="帮我做一份 8 页中文技术方案，主题是 AI Agent 如何提升研发交付效率，面向 CTO 和研发负责人。">技术方案 8 页</button>
+          <button type="button" class="chip" data-prompt="帮我做一份 6 页产品路演稿，介绍 SlidePilot 的目标用户、核心能力、差异化和路线图。">产品路演 6 页</button>
+        </div>
 
         <div class="options">
-          <label>
-            风格
+          <label class="field" for="style">
+            <span>风格</span>
             <select id="style">
               <option value="tech-dark">科技深色</option>
               <option value="modern-light">现代明亮</option>
               <option value="minimal">极简</option>
             </select>
           </label>
-          <label>
-            页数
+          <label class="field" for="pages">
+            <span>页数</span>
             <input id="pages" type="number" value="8" min="4" max="20">
           </label>
         </div>
 
-        <button id="btn-create">生成演示文稿</button>
+        <div class="toggle-grid" aria-label="生成选项">
+          <label class="toggle-row">
+            <input id="option-images" type="checkbox" checked disabled>
+            <span>自动图片资产</span>
+            <em id="image-status">检测中</em>
+          </label>
+          <label class="toggle-row">
+            <input id="option-pptx" type="checkbox" checked disabled>
+            <span>PPTX 导出</span>
+            <em>启用</em>
+          </label>
+          <label class="toggle-row">
+            <input id="option-qa" type="checkbox" checked disabled>
+            <span>浏览器 QA</span>
+            <em>启用</em>
+          </label>
+        </div>
+
+        <button id="btn-create" type="button">
+          <span class="btn-label">生成演示文稿</span>
+          <span class="btn-sub">规划 · 生成 · QA · 导出</span>
+        </button>
       </section>
 
-      <div class="output-column">
-        <section id="agent-panel" class="agent-panel" hidden>
+      <section class="workbench" aria-label="生成工作台">
+        <section id="empty-panel" class="empty-panel">
+          <div class="empty-copy">
+            <p class="eyebrow">Ready</p>
+            <h2>输入需求后，Agent 会把演示文稿完整跑完。</h2>
+            <p>你会看到阶段进度、工具调用、QA 结果、截图、下载入口和单页修订，不需要猜后端发生了什么。</p>
+          </div>
+          <div class="workflow-strip" aria-label="工作流">
+            <div><strong>1</strong><span>解析需求</span></div>
+            <div><strong>2</strong><span>规划页面</span></div>
+            <div><strong>3</strong><span>生成 HTML</span></div>
+            <div><strong>4</strong><span>浏览器 QA</span></div>
+            <div><strong>5</strong><span>导出产物</span></div>
+          </div>
+        </section>
+
+        <section id="live-panel" class="live-panel" hidden>
           <div class="panel-header">
             <div>
-              <h2>Agent 运行过程</h2>
+              <p class="eyebrow">Live Run</p>
+              <h2 id="agent-heading">Agent 运行过程</h2>
               <p id="agent-summary">等待开始</p>
             </div>
             <div class="run-stats">
@@ -52,74 +108,122 @@
             </div>
           </div>
 
-          <div class="stage-grid" id="stage-grid"></div>
-
-          <div class="event-toolbar">
-            <span>实时事件</span>
-            <label><input id="filter-llm" type="checkbox" checked> LLM</label>
-            <label><input id="filter-tool" type="checkbox" checked> 工具</label>
-            <label><input id="filter-artifact" type="checkbox" checked> 产物</label>
-            <label><input id="filter-qa" type="checkbox" checked> QA</label>
+          <div class="run-progress" aria-label="阶段进度">
+            <div class="progress-bar"><span id="progress-fill"></span></div>
+            <span id="progress-label">0 / 10 阶段</span>
           </div>
-          <ol id="event-list" class="event-list"></ol>
+
+          <div class="stage-grid" id="stage-grid"></div>
         </section>
 
         <section id="preview-panel" class="preview-panel" hidden>
-          <div class="panel-header">
+          <div class="panel-header result-header">
             <div>
+              <p class="eyebrow">Result</p>
               <h2>生成结果</h2>
               <p id="result-summary">预览已就绪</p>
             </div>
-            <div class="actions">
+            <div class="result-actions">
+              <span id="qa-badge" class="qa-badge pending">等待 QA</span>
+              <a id="btn-open" class="btn secondary" target="_blank" rel="noreferrer" hidden>打开预览</a>
               <a id="btn-pptx" class="btn" download hidden>下载 PPTX</a>
               <a id="btn-pdf" class="btn" download hidden>下载 PDF</a>
-              <a id="btn-html" class="btn" download>下载 HTML</a>
+              <a id="btn-html" class="btn secondary" download>下载 HTML</a>
             </div>
           </div>
-          <div class="revision-panel">
-            <label>
-              修订页
+
+          <div id="preview-shell" class="preview-shell loading">
+            <div id="preview-fallback" class="preview-fallback" hidden>
+              <strong>预览加载失败</strong>
+              <span>可以打开或下载 HTML 检查生成结果。</span>
+            </div>
+            <img id="preview-image" alt="演示文稿预览截图" hidden>
+            <iframe id="preview-frame" title="演示文稿预览"></iframe>
+          </div>
+
+          <div class="revision-panel" aria-label="单页修订">
+            <label class="field compact" for="revision-page">
+              <span>修订页</span>
               <input id="revision-page" type="number" min="1" value="1">
             </label>
-            <label class="revision-instruction">
-              修改指令
+            <label class="field revision-instruction" for="revision-instruction">
+              <span>修改指令</span>
               <textarea id="revision-instruction" rows="2" placeholder="例如：把第 2 页改成三栏对比，并减少文字密度"></textarea>
             </label>
-            <button id="btn-revise" type="button">修订此页</button>
-          </div>
-          <iframe id="preview-frame" title="Slide preview"></iframe>
-          <div id="quality-panel" class="quality-panel" hidden>
-            <div class="quality-section">
-              <div class="quality-header">
-                <h3>QA 检查</h3>
-                <span id="qa-summary">等待结果</span>
+            <div class="revision-actions">
+              <div class="revision-chips">
+                <button type="button" class="chip small" data-revision="减少文字密度，保留核心结论。">减少文字</button>
+                <button type="button" class="chip small" data-revision="强化视觉层级，让标题、关键指标和行动项更清晰。">强化层级</button>
+                <button type="button" class="chip small" data-revision="修复重叠、裁切或安全区问题。">修复重叠</button>
               </div>
-              <ul id="qa-list" class="qa-list"></ul>
-            </div>
-            <div class="quality-section">
-              <div class="quality-header">
-                <h3>截图</h3>
-                <span id="screenshot-summary">0 张</span>
-              </div>
-              <div id="screenshot-gallery" class="screenshot-gallery"></div>
-            </div>
-            <div class="quality-section">
-              <div class="quality-header">
-                <h3>图片资产</h3>
-                <span id="asset-summary">0 个</span>
-              </div>
-              <div id="asset-gallery" class="screenshot-gallery"></div>
-            </div>
-            <div class="quality-section">
-              <div class="quality-header">
-                <h3>修订历史</h3>
-                <span id="revision-summary">0 次</span>
-              </div>
-              <ol id="revision-history" class="revision-history"></ol>
+              <button id="btn-revise" type="button">修订此页</button>
             </div>
           </div>
         </section>
-      </div>
+
+        <section id="agent-panel" class="agent-panel" hidden>
+          <div class="event-toolbar">
+            <div>
+              <strong>过程详情</strong>
+              <span id="event-mode-label">关键事件</span>
+            </div>
+            <div class="event-controls">
+              <label><input id="filter-llm" type="checkbox" checked> 模型</label>
+              <label><input id="filter-tool" type="checkbox" checked> 工具</label>
+              <label><input id="filter-artifact" type="checkbox" checked> 产物</label>
+              <label><input id="filter-qa" type="checkbox" checked> QA</label>
+              <label><input id="filter-error" type="checkbox" checked> 异常</label>
+            </div>
+          </div>
+          <ol id="event-list" class="event-list" aria-live="polite"></ol>
+        </section>
+
+        <section id="quality-panel" class="quality-panel" hidden>
+          <div class="quality-section qa-section">
+            <div class="quality-header">
+              <div>
+                <h3>QA 检查</h3>
+                <p>按严重程度展示可修订问题。</p>
+              </div>
+              <span id="qa-summary">等待结果</span>
+            </div>
+            <ul id="qa-list" class="qa-list"></ul>
+          </div>
+
+          <div class="quality-section">
+            <div class="quality-header">
+              <div>
+                <h3>截图</h3>
+                <p>点击缩略图可选中修订页。</p>
+              </div>
+              <span id="screenshot-summary">0 张</span>
+            </div>
+            <div id="screenshot-gallery" class="screenshot-gallery"></div>
+          </div>
+
+          <div class="quality-section">
+            <div class="quality-header">
+              <div>
+                <h3>图片资产</h3>
+                <p>Agent 自动生成或引用的视觉素材。</p>
+              </div>
+              <span id="asset-summary">0 个</span>
+            </div>
+            <div id="asset-gallery" class="screenshot-gallery"></div>
+          </div>
+
+          <div class="quality-section">
+            <div class="quality-header">
+              <div>
+                <h3>修订历史</h3>
+                <p>记录人工修改闭环。</p>
+              </div>
+              <span id="revision-summary">0 次</span>
+            </div>
+            <ol id="revision-history" class="revision-history"></ol>
+          </div>
+        </section>
+      </section>
     </main>
   </div>
   <script src="/public/js/app.js"></script>

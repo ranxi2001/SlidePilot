@@ -52,10 +52,13 @@ Unlike traditional PPT generators that stop at text generation, SlidePilot treat
 Preview: http://127.0.0.1:4321/runs/{id}/preview.html
 ```
 
-### Agent Trace
+### Agent Workbench
 
-<img src="docs/assets/readme/agent-trace.png" width="100%" alt="SlidePilot Agent trace" />
-<img src="docs/assets/readme/agent-repair.png" width="100%" alt="SlidePilot Agent repair loop" />
+<p>Live model calls, tool execution, QA, repair loops, screenshots, and single-slide revision without exposing private chain-of-thought.</p>
+
+<img src="docs/assets/readme/ui-live-run.png" width="100%" alt="SlidePilot live Agent workbench" />
+<img src="docs/assets/readme/ui-repair-run.png" width="100%" alt="SlidePilot QA repair loop" />
+<img src="docs/assets/readme/ui-qa-panel.png" width="100%" alt="SlidePilot QA and screenshot panel" />
 
 ### Generated Deck
 

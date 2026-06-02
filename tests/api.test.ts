@@ -68,8 +68,8 @@ describe("api routes", () => {
     expect(reviseRes.status).toBe(200);
     expect(revised.runId).toBe(created.runId);
     expect(revised.revisedPage).toBe(2);
-    expect(revised.previewUrl).toBe(`/runs/${created.runId}/preview.html`);
-    expect(revised.pptxUrl).toBe(`/runs/${created.runId}/deck.pptx`);
+    expect(revised.previewUrl).toBe(`/runs/${encodeURIComponent(created.runId)}/preview.html`);
+    expect(revised.pptxUrl).toBe(`/runs/${encodeURIComponent(created.runId)}/deck.pptx`);
     expect(revised.qa.screenshots).toHaveLength(4);
 
     const detailRes = await app.fetch(new Request(`http://local/api/runs/${created.runId}`));
@@ -82,6 +82,26 @@ describe("api routes", () => {
     expect(detail.screenshots[0].url).toMatch(/^\/runs\//);
     expect(detail.revisions).toHaveLength(1);
     expect(JSON.stringify(detail)).not.toContain("C:\\");
+  }, 120_000);
+
+  it("reads run details through encoded non-ascii run ids", async () => {
+    const app = createApiTestApp();
+    const createRes = await app.fetch(createDeckRequest({
+      prompt: "帮我做一个 4 页 PPT，介绍 Harness 工程。",
+      language: "zh-CN",
+    }));
+    const created = await createRes.json();
+
+    expect(createRes.status).toBe(200);
+    expect(created.runId).toBeTruthy();
+
+    const detailRes = await app.fetch(new Request(`http://local/api/runs/${encodeURIComponent(created.runId)}`));
+    const detail = await detailRes.json();
+
+    expect(detailRes.status).toBe(200);
+    expect(detail.runId).toBe(created.runId);
+    expect(detail.artifacts.previewUrl).toBe(`/runs/${encodeURIComponent(created.runId)}/preview.html`);
+    expect(detail.screenshots[0].url).toMatch(new RegExp(`^/runs/${encodeURIComponent(created.runId)}/png/`));
   }, 120_000);
 
   it("streams observable agent events in mock mode", async () => {

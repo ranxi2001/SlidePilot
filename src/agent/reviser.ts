@@ -117,9 +117,9 @@ export async function reviseRunSlide(options: ReviseSlideOptions): Promise<Revis
 
   return {
     runId,
-    previewUrl: `/runs/${runId}/preview.html`,
-    pdfUrl: pdfResult.success ? `/runs/${runId}/deck.pdf` : undefined,
-    pptxUrl: pptxResult.success ? `/runs/${runId}/deck.pptx` : undefined,
+    previewUrl: runAssetUrl(runId, "preview.html"),
+    pdfUrl: pdfResult.success ? runAssetUrl(runId, "deck.pdf") : undefined,
+    pptxUrl: pptxResult.success ? runAssetUrl(runId, "deck.pptx") : undefined,
     qa,
     totalPages: manifest.totalPages,
     revisedPage: pageIndex,
@@ -129,8 +129,12 @@ export async function reviseRunSlide(options: ReviseSlideOptions): Promise<Revis
 function toPublicQA(qa: PipelineResult["qa"], runId: string): PipelineResult["qa"] {
   return {
     ...qa,
-    screenshots: qa.screenshots.map((path) => `/runs/${runId}/png/${path.split(/[\\/]/).pop()}`),
+    screenshots: qa.screenshots.map((path) => runAssetUrl(runId, "png", path.split(/[\\/]/).pop() || "")),
   };
+}
+
+function runAssetUrl(runId: string, ...parts: string[]): string {
+  return `/runs/${encodeURIComponent(runId)}/${parts.map((part) => encodeURIComponent(part)).join("/")}`;
 }
 
 async function reviseWithLLM(options: {

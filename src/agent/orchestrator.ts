@@ -269,9 +269,9 @@ export async function runPipeline(request: CreateRequest, onProgress?: ProgressF
 
   return {
     runId,
-    previewUrl: `/runs/${runId}/preview.html`,
-    pdfUrl: pdfResult.success ? `/runs/${runId}/deck.pdf` : undefined,
-    pptxUrl: pptxResult.success ? `/runs/${runId}/deck.pptx` : undefined,
+    previewUrl: runAssetUrl(runId, "preview.html"),
+    pdfUrl: pdfResult.success ? runAssetUrl(runId, "deck.pdf") : undefined,
+    pptxUrl: pptxResult.success ? runAssetUrl(runId, "deck.pptx") : undefined,
     qa,
     totalPages: outline.totalPages,
   };
@@ -280,8 +280,12 @@ export async function runPipeline(request: CreateRequest, onProgress?: ProgressF
 function toPublicQA(qa: QAResult, runId: string): QAResult {
   return {
     ...qa,
-    screenshots: qa.screenshots.map((path) => `/runs/${runId}/png/${path.split(/[\\/]/).pop()}`),
+    screenshots: qa.screenshots.map((path) => runAssetUrl(runId, "png", path.split(/[\\/]/).pop() || "")),
   };
+}
+
+function runAssetUrl(runId: string, ...parts: string[]): string {
+  return `/runs/${encodeURIComponent(runId)}/${parts.map((part) => encodeURIComponent(part)).join("/")}`;
 }
 
 async function buildRequirement(request: CreateRequest, useLLM: boolean, progress: ProgressFn): Promise<RequirementSpec> {
