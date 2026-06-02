@@ -12,3 +12,4 @@ screenshots/
 .env
 *.env
 .claude/skills/local-dev
+.DS_Store
