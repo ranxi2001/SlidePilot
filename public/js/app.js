@@ -274,20 +274,43 @@ async function loadRunDetail(runId) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     renderRunDetail(await res.json());
   } catch (err) {
-    qualityPanel.hidden = false;
-    qaSummary.textContent = "详情加载失败";
-    qaList.innerHTML = `<li><strong class="fail">ERROR</strong>${escapeHTML(err.message || String(err))}</li>`;
+    renderRunDetail({
+      qa: currentResult?.qa,
+      screenshots: screenshotFilesFromResult(currentResult),
+      assets: [],
+      revisions: [],
+      detailError: err.message || String(err),
+    });
   }
 }
 
 function renderRunDetail(detail) {
   qualityPanel.hidden = false;
   renderQA(detail.qa || currentResult?.qa);
+  if (detail.detailError) {
+    qaList.insertAdjacentHTML("beforeend", `<li><strong class="warn">DETAIL</strong>详情接口不可用，已使用本次生成结果降级展示：${escapeHTML(detail.detailError)}</li>`);
+  }
   renderGallery(screenshotGallery, detail.screenshots || [], "截图");
   screenshotSummary.textContent = `${(detail.screenshots || []).length} 张`;
   renderGallery(assetGallery, detail.assets || [], "资产");
   assetSummary.textContent = `${(detail.assets || []).length} 个`;
   renderRevisions(detail.revisions || []);
+}
+
+function screenshotFilesFromResult(result) {
+  const screenshots = result?.qa?.screenshots || [];
+  return screenshots.map((rawUrl, index) => ({
+    name: `slide-${String(index + 1).padStart(2, "0")}.png`,
+    url: normalizeAssetUrl(rawUrl),
+    bytes: undefined,
+  })).filter((file) => file.url);
+}
+
+function normalizeAssetUrl(value) {
+  const url = String(value || "");
+  if (url.startsWith("/runs/") || url.startsWith("http://") || url.startsWith("https://")) return url;
+  const match = url.replaceAll("\\", "/").match(/\/runs\/(.+)$/);
+  return match ? `/runs/${match[1]}` : "";
 }
 
 function renderQA(qa) {

@@ -39,85 +39,87 @@
         <button id="btn-create">生成演示文稿</button>
       </section>
 
-      <section id="agent-panel" class="agent-panel" hidden>
-        <div class="panel-header">
-          <div>
-            <h2>Agent 运行过程</h2>
-            <p id="agent-summary">等待开始</p>
+      <div class="output-column">
+        <section id="agent-panel" class="agent-panel" hidden>
+          <div class="panel-header">
+            <div>
+              <h2>Agent 运行过程</h2>
+              <p id="agent-summary">等待开始</p>
+            </div>
+            <div class="run-stats">
+              <span id="stat-elapsed">0.0s</span>
+              <span id="stat-events">0 events</span>
+            </div>
           </div>
-          <div class="run-stats">
-            <span id="stat-elapsed">0.0s</span>
-            <span id="stat-events">0 events</span>
-          </div>
-        </div>
 
-        <div class="stage-grid" id="stage-grid"></div>
+          <div class="stage-grid" id="stage-grid"></div>
 
-        <div class="event-toolbar">
-          <span>实时事件</span>
-          <label><input id="filter-llm" type="checkbox" checked> LLM</label>
-          <label><input id="filter-tool" type="checkbox" checked> 工具</label>
-          <label><input id="filter-artifact" type="checkbox" checked> 产物</label>
-          <label><input id="filter-qa" type="checkbox" checked> QA</label>
-        </div>
-        <ol id="event-list" class="event-list"></ol>
-      </section>
+          <div class="event-toolbar">
+            <span>实时事件</span>
+            <label><input id="filter-llm" type="checkbox" checked> LLM</label>
+            <label><input id="filter-tool" type="checkbox" checked> 工具</label>
+            <label><input id="filter-artifact" type="checkbox" checked> 产物</label>
+            <label><input id="filter-qa" type="checkbox" checked> QA</label>
+          </div>
+          <ol id="event-list" class="event-list"></ol>
+        </section>
 
-      <section id="preview-panel" class="preview-panel" hidden>
-        <div class="panel-header">
-          <div>
-            <h2>生成结果</h2>
-            <p id="result-summary">预览已就绪</p>
-          </div>
-          <div class="actions">
-            <a id="btn-pptx" class="btn" download hidden>下载 PPTX</a>
-            <a id="btn-pdf" class="btn" download hidden>下载 PDF</a>
-            <a id="btn-html" class="btn" download>下载 HTML</a>
-          </div>
-        </div>
-        <div class="revision-panel">
-          <label>
-            修订页
-            <input id="revision-page" type="number" min="1" value="1">
-          </label>
-          <label class="revision-instruction">
-            修改指令
-            <textarea id="revision-instruction" rows="2" placeholder="例如：把第 2 页改成三栏对比，并减少文字密度"></textarea>
-          </label>
-          <button id="btn-revise" type="button">修订此页</button>
-        </div>
-        <iframe id="preview-frame" title="Slide preview"></iframe>
-        <div id="quality-panel" class="quality-panel" hidden>
-          <div class="quality-section">
-            <div class="quality-header">
-              <h3>QA 检查</h3>
-              <span id="qa-summary">等待结果</span>
+        <section id="preview-panel" class="preview-panel" hidden>
+          <div class="panel-header">
+            <div>
+              <h2>生成结果</h2>
+              <p id="result-summary">预览已就绪</p>
             </div>
-            <ul id="qa-list" class="qa-list"></ul>
-          </div>
-          <div class="quality-section">
-            <div class="quality-header">
-              <h3>截图</h3>
-              <span id="screenshot-summary">0 张</span>
+            <div class="actions">
+              <a id="btn-pptx" class="btn" download hidden>下载 PPTX</a>
+              <a id="btn-pdf" class="btn" download hidden>下载 PDF</a>
+              <a id="btn-html" class="btn" download>下载 HTML</a>
             </div>
-            <div id="screenshot-gallery" class="screenshot-gallery"></div>
           </div>
-          <div class="quality-section">
-            <div class="quality-header">
-              <h3>图片资产</h3>
-              <span id="asset-summary">0 个</span>
+          <div class="revision-panel">
+            <label>
+              修订页
+              <input id="revision-page" type="number" min="1" value="1">
+            </label>
+            <label class="revision-instruction">
+              修改指令
+              <textarea id="revision-instruction" rows="2" placeholder="例如：把第 2 页改成三栏对比，并减少文字密度"></textarea>
+            </label>
+            <button id="btn-revise" type="button">修订此页</button>
+          </div>
+          <iframe id="preview-frame" title="Slide preview"></iframe>
+          <div id="quality-panel" class="quality-panel" hidden>
+            <div class="quality-section">
+              <div class="quality-header">
+                <h3>QA 检查</h3>
+                <span id="qa-summary">等待结果</span>
+              </div>
+              <ul id="qa-list" class="qa-list"></ul>
             </div>
-            <div id="asset-gallery" class="screenshot-gallery"></div>
-          </div>
-          <div class="quality-section">
-            <div class="quality-header">
-              <h3>修订历史</h3>
-              <span id="revision-summary">0 次</span>
+            <div class="quality-section">
+              <div class="quality-header">
+                <h3>截图</h3>
+                <span id="screenshot-summary">0 张</span>
+              </div>
+              <div id="screenshot-gallery" class="screenshot-gallery"></div>
             </div>
-            <ol id="revision-history" class="revision-history"></ol>
+            <div class="quality-section">
+              <div class="quality-header">
+                <h3>图片资产</h3>
+                <span id="asset-summary">0 个</span>
+              </div>
+              <div id="asset-gallery" class="screenshot-gallery"></div>
+            </div>
+            <div class="quality-section">
+              <div class="quality-header">
+                <h3>修订历史</h3>
+                <span id="revision-summary">0 次</span>
+              </div>
+              <ol id="revision-history" class="revision-history"></ol>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
     </main>
   </div>
   <script src="/public/js/app.js"></script>

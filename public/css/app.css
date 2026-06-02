@@ -61,6 +61,13 @@ h2 { font-size: 16px; line-height: 1.3; }
   align-items: start;
 }
 
+.output-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
 .input-panel,
 .agent-panel,
 .preview-panel {
@@ -69,7 +76,7 @@ h2 { font-size: 16px; line-height: 1.3; }
   border-radius: var(--radius);
 }
 
-.input-panel { padding: 18px; position: sticky; top: 16px; }
+.input-panel { padding: 18px; }
 
 label {
   display: flex;
@@ -223,7 +230,7 @@ input[type="number"] {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: 520px;
+  max-height: 420px;
   overflow: auto;
   padding-right: 4px;
 }
@@ -274,8 +281,10 @@ input[type="number"] {
 
 #preview-frame {
   width: 100%;
-  height: min(62vw, 560px);
-  min-height: 360px;
+  aspect-ratio: 16 / 9;
+  height: auto;
+  min-height: 320px;
+  max-height: 560px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: white;
@@ -342,7 +351,7 @@ input[type="number"] {
 .quality-panel {
   margin-top: 12px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
 
@@ -440,4 +449,6 @@ input[type="number"] {
   .stage-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .event-item { grid-template-columns: 64px 60px minmax(0, 1fr); }
   .revision-panel { grid-template-columns: 1fr; }
+  .quality-panel { grid-template-columns: 1fr; }
+  #preview-frame { min-height: 220px; }
 }
