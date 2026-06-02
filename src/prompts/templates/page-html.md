@@ -24,7 +24,7 @@ Rules:
 4. Use CSS variables for colors (var(--accent), etc.).
 5. Font size must be >= 18px for body text and >= 36px for h1.
 6. Maximum padding: 48px top/bottom, 64px left/right.
-7. No external resources (no images, no fonts, no CDN links).
+7. No external resources, fonts, or CDN links. You may use local image URLs already present in the page plan, such as visual blocks with `{ "assetUrl": "/runs/.../assets/..." }`.
 8. No JavaScript.
 9. Prefer flexbox for simple layouts and grid for cards/metrics.
 10. For dense pages, reduce copy before shrinking below readable sizes; no block should rely on scrolling.
@@ -32,4 +32,5 @@ Rules:
 12. Do not let labels, dots, lines, icons, cards, or list items overlap. Reserve at least 8px vertical and horizontal gap between text blocks.
 13. Timeline layouts must put text below or beside markers with clear spacing; markers and horizontal lines must never cover text.
 14. Visual diagrams must stay inside a single bounded area and must not drift over adjacent cards, bullets, or headings.
-15. Keep it clean: whitespace is good, less is more.
+15. If a visual block includes `assetUrl`, render it as an `<img>` inside a bounded `figure` or `div`; do not invent new external image URLs.
+16. Keep it clean: whitespace is good, less is more.

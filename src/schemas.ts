@@ -11,6 +11,33 @@ export const createRequestSchema = z.object({
 
 export type CreateRequest = z.infer<typeof createRequestSchema>;
 
+export const revisionRequestSchema = z.object({
+  instruction: z.string().min(1),
+});
+
+export type RevisionRequest = z.infer<typeof revisionRequestSchema>;
+
+export const imageSizeSchema = z.enum([
+  "1024x1024",
+  "1536x1536",
+  "2048x2048",
+  "1792x1024",
+  "2048x1024",
+  "1024x1792",
+  "1024x2048",
+]);
+
+export type ImageSize = z.infer<typeof imageSizeSchema>;
+
+export const imageGenerationRequestSchema = z.object({
+  prompt: z.string().min(1),
+  size: imageSizeSchema.default("1024x1024"),
+  n: z.number().int().min(1).max(4).default(1),
+  runId: z.string().optional(),
+});
+
+export type ImageGenerationRequest = z.infer<typeof imageGenerationRequestSchema>;
+
 // === Requirement Spec ===
 
 export const requirementSpecSchema = z.object({
@@ -134,6 +161,7 @@ export const runManifestSchema = z.object({
     })),
     previewHtml: z.string().optional(),
     pdf: z.string().optional(),
+    pptx: z.string().optional(),
   }),
 });
 

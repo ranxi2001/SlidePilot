@@ -75,7 +75,48 @@
             <a id="btn-html" class="btn" download>下载 HTML</a>
           </div>
         </div>
+        <div class="revision-panel">
+          <label>
+            修订页
+            <input id="revision-page" type="number" min="1" value="1">
+          </label>
+          <label class="revision-instruction">
+            修改指令
+            <textarea id="revision-instruction" rows="2" placeholder="例如：把第 2 页改成三栏对比，并减少文字密度"></textarea>
+          </label>
+          <button id="btn-revise" type="button">修订此页</button>
+        </div>
         <iframe id="preview-frame" title="Slide preview"></iframe>
+        <div id="quality-panel" class="quality-panel" hidden>
+          <div class="quality-section">
+            <div class="quality-header">
+              <h3>QA 检查</h3>
+              <span id="qa-summary">等待结果</span>
+            </div>
+            <ul id="qa-list" class="qa-list"></ul>
+          </div>
+          <div class="quality-section">
+            <div class="quality-header">
+              <h3>截图</h3>
+              <span id="screenshot-summary">0 张</span>
+            </div>
+            <div id="screenshot-gallery" class="screenshot-gallery"></div>
+          </div>
+          <div class="quality-section">
+            <div class="quality-header">
+              <h3>图片资产</h3>
+              <span id="asset-summary">0 个</span>
+            </div>
+            <div id="asset-gallery" class="screenshot-gallery"></div>
+          </div>
+          <div class="quality-section">
+            <div class="quality-header">
+              <h3>修订历史</h3>
+              <span id="revision-summary">0 次</span>
+            </div>
+            <ol id="revision-history" class="revision-history"></ol>
+          </div>
+        </div>
       </section>
     </main>
   </div>

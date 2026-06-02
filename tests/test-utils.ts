@@ -10,6 +10,9 @@ const LLM_ENV_KEYS = [
   "OPENAI_BASE_URL",
   "OPENAI_API_KEY",
   "OPENAI_MODEL",
+  "IMAGE_BASE_URL",
+  "IMAGE_API_KEY",
+  "IMAGE_MODEL",
 ];
 
 export function createApiTestApp(): Hono {

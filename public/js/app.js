@@ -12,6 +12,18 @@ const resultSummary = document.getElementById("result-summary");
 const btnPptx = document.getElementById("btn-pptx");
 const btnPdf = document.getElementById("btn-pdf");
 const btnHtml = document.getElementById("btn-html");
+const revisionPageEl = document.getElementById("revision-page");
+const revisionInstructionEl = document.getElementById("revision-instruction");
+const btnRevise = document.getElementById("btn-revise");
+const qualityPanel = document.getElementById("quality-panel");
+const qaSummary = document.getElementById("qa-summary");
+const qaList = document.getElementById("qa-list");
+const screenshotSummary = document.getElementById("screenshot-summary");
+const screenshotGallery = document.getElementById("screenshot-gallery");
+const assetSummary = document.getElementById("asset-summary");
+const assetGallery = document.getElementById("asset-gallery");
+const revisionSummary = document.getElementById("revision-summary");
+const revisionHistory = document.getElementById("revision-history");
 const statusPill = document.getElementById("status-pill");
 const statElapsed = document.getElementById("stat-elapsed");
 const statEvents = document.getElementById("stat-events");
@@ -34,6 +46,7 @@ const stageState = new Map();
 let eventCount = 0;
 let runStart = 0;
 let timer = null;
+let currentResult = null;
 
 init();
 
@@ -95,6 +108,62 @@ btnCreate.addEventListener("click", async () => {
   }
 });
 
+btnRevise.addEventListener("click", async () => {
+  if (!currentResult?.runId) return;
+
+  const pageIndex = parseInt(revisionPageEl.value, 10);
+  const instruction = revisionInstructionEl.value.trim();
+  if (!Number.isInteger(pageIndex) || pageIndex < 1 || !instruction) return;
+
+  btnRevise.disabled = true;
+  btnRevise.textContent = "修订中...";
+  resultSummary.textContent = `正在修订第 ${pageIndex} 页...`;
+  addEvent({
+    type: "progress",
+    status: "start",
+    step: "revise",
+    kind: "tool",
+    pageIndex,
+    message: "Submit a single-slide revision and regenerate preview/export artifacts.",
+    elapsedMs: Date.now() - runStart,
+  });
+
+  try {
+    const res = await fetch(`/api/runs/${encodeURIComponent(currentResult.runId)}/slides/${pageIndex}/revise`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ instruction }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+
+    addEvent({
+      type: "progress",
+      status: "done",
+      step: "revise",
+      kind: "artifact",
+      pageIndex,
+      message: `Revision saved. QA score ${data.qa?.score ?? "-"}.`,
+      elapsedMs: Date.now() - runStart,
+    });
+    showResult(data);
+  } catch (err) {
+    addEvent({
+      type: "error",
+      status: "error",
+      step: "revise",
+      kind: "tool",
+      pageIndex,
+      message: err.message || String(err),
+      elapsedMs: Date.now() - runStart,
+    });
+    resultSummary.textContent = "修订失败";
+  } finally {
+    btnRevise.disabled = false;
+    btnRevise.textContent = "修订此页";
+  }
+});
+
 async function consumeEventStream(body) {
   const reader = body.getReader();
   const decoder = new TextDecoder();
@@ -151,7 +220,12 @@ function handleStreamEvent(event) {
 function showResult(result) {
   if (!result?.previewUrl) return;
 
+  currentResult = result;
   previewPanel.hidden = false;
+  revisionPageEl.max = String(result.totalPages || 1);
+  if (!revisionPageEl.value || Number(revisionPageEl.value) > (result.totalPages || 1)) {
+    revisionPageEl.value = "1";
+  }
   resultSummary.textContent = "预览加载中...";
   previewFrame.src = `${result.previewUrl}?t=${Date.now()}`;
   previewFrame.onload = () => {
@@ -172,13 +246,17 @@ function showResult(result) {
   } else {
     btnPdf.hidden = true;
   }
+
+  loadRunDetail(result.runId);
 }
 
 function resetRun() {
   eventCount = 0;
   runStart = Date.now();
+  currentResult = null;
   agentPanel.hidden = false;
   previewPanel.hidden = true;
+  qualityPanel.hidden = true;
   btnPptx.hidden = true;
   btnPdf.hidden = true;
   eventList.innerHTML = "";
@@ -187,6 +265,86 @@ function resetRun() {
   renderStages();
   startTimer();
   statEvents.textContent = "0 events";
+}
+
+async function loadRunDetail(runId) {
+  if (!runId) return;
+  try {
+    const res = await fetch(`/api/runs/${encodeURIComponent(runId)}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    renderRunDetail(await res.json());
+  } catch (err) {
+    qualityPanel.hidden = false;
+    qaSummary.textContent = "详情加载失败";
+    qaList.innerHTML = `<li><strong class="fail">ERROR</strong>${escapeHTML(err.message || String(err))}</li>`;
+  }
+}
+
+function renderRunDetail(detail) {
+  qualityPanel.hidden = false;
+  renderQA(detail.qa || currentResult?.qa);
+  renderGallery(screenshotGallery, detail.screenshots || [], "截图");
+  screenshotSummary.textContent = `${(detail.screenshots || []).length} 张`;
+  renderGallery(assetGallery, detail.assets || [], "资产");
+  assetSummary.textContent = `${(detail.assets || []).length} 个`;
+  renderRevisions(detail.revisions || []);
+}
+
+function renderQA(qa) {
+  if (!qa) {
+    qaSummary.textContent = "无 QA 数据";
+    qaList.innerHTML = "";
+    return;
+  }
+
+  const checks = qa.checks || [];
+  const failCount = checks.filter((check) => check.status === "fail").length;
+  const warnCount = checks.filter((check) => check.status === "warn").length;
+  qaSummary.textContent = `score ${qa.score ?? "-"} | fail ${failCount} | warn ${warnCount}`;
+
+  if (checks.length === 0) {
+    qaList.innerHTML = `<li><strong class="pass">PASS</strong>未发现 QA 问题</li>`;
+    return;
+  }
+
+  qaList.innerHTML = checks.map((check) => `
+    <li>
+      <strong class="${escapeHTML(check.status)}">${escapeHTML(check.status).toUpperCase()}</strong>
+      ${check.pageIndex ? `P${check.pageIndex} ` : ""}${escapeHTML(check.id || check.name)}:
+      ${escapeHTML(check.message || "")}
+    </li>
+  `).join("");
+}
+
+function renderGallery(container, files, label) {
+  if (!files.length) {
+    container.innerHTML = `<div class="qa-list"><li>${label}为空</li></div>`;
+    return;
+  }
+
+  container.innerHTML = files.map((file, index) => `
+    <a class="thumb" href="${escapeHTML(file.url)}" target="_blank" rel="noreferrer">
+      <img src="${escapeHTML(file.url)}?t=${Date.now()}" alt="${escapeHTML(file.name || `${label} ${index + 1}`)}">
+      <span><b>${escapeHTML(file.name || `${label} ${index + 1}`)}</b><em>${formatBytes(file.bytes)}</em></span>
+    </a>
+  `).join("");
+}
+
+function renderRevisions(revisions) {
+  revisionSummary.textContent = `${revisions.length} 次`;
+  if (!revisions.length) {
+    revisionHistory.innerHTML = `<li>暂无人工修订</li>`;
+    return;
+  }
+
+  revisionHistory.innerHTML = revisions.slice().reverse().map((revision) => `
+    <li>
+      <strong>P${escapeHTML(revision.pageIndex || "-")}</strong>
+      ${escapeHTML(revision.instruction || "")}
+      <br>
+      ${escapeHTML(revision.mode || "-")} | ${escapeHTML(revision.revisedAt || "-")} | QA ${escapeHTML(revision.qaScore ?? "-")}
+    </li>
+  `).join("");
 }
 
 function renderStages() {
@@ -295,6 +453,13 @@ function stopTimer() {
 function formatElapsed(ms = 0) {
   if (!Number.isFinite(ms)) return "0.0s";
   return `${(ms / 1000).toFixed(1)}s`;
+}
+
+function formatBytes(bytes) {
+  if (!Number.isFinite(bytes)) return "-";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
 function escapeHTML(value) {

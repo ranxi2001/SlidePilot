@@ -10,14 +10,14 @@
     <img src="https://img.shields.io/badge/Pipeline-7_stages-6366f1?style=flat-square" />
     <img src="https://img.shields.io/badge/Themes-3_built--in-818cf8?style=flat-square" />
     <img src="https://img.shields.io/badge/Page_Types-11-34d399?style=flat-square" />
-    <img src="https://img.shields.io/badge/QA_Checks-5_automated-f59e0b?style=flat-square" />
+    <img src="https://img.shields.io/badge/QA_Checks-DOM_%2B_pixel-f59e0b?style=flat-square" />
     <img src="https://img.shields.io/badge/LLM-Any_OpenAI--compatible-09090b?style=flat-square" />
   </p>
 </div>
 
 ---
 
-**SlidePilot** is an open-source AI presentation agent that turns a topic, outline, or document into a professional HTML slide deck — with automatic browser-based QA, visual repair, PDF export, and screenshot-based PPTX export. No PowerPoint, no code, no design skills required.
+**SlidePilot** is an open-source AI presentation agent that turns a topic, outline, or document into a professional HTML slide deck — with automatic browser-based QA, visual repair, manual single-slide revision, PDF export, and screenshot-based PPTX export. No PowerPoint, no code, no design skills required.
 
 Unlike traditional PPT generators that stop at text generation, SlidePilot treats presentation creation as a **complete agent workflow**: understand → plan → style → render → inspect → repair → export.
 
@@ -26,11 +26,12 @@ Unlike traditional PPT generators that stop at text generation, SlidePilot treat
 | Pain Point | SlidePilot's Answer |
 |---|---|
 | Generated slides look generic | **Planning-first**: per-page content budget and layout contract before any HTML |
-| No visual QA after generation | **Playwright QA**: automated overflow, blank, dimension checks on every page |
+| No visual QA after generation | **Playwright + pixel QA**: automated overflow, blank ratio, edge cutoff, contrast, and screenshot checks |
 | Style inconsistency across pages | **Global CSS lock**: one `style.json` → `global.css` applied to all pages |
-| Can't iterate without code | **Web UI**: type your prompt, preview in browser, download PDF/PPTX |
+| Can't iterate without code | **Web UI**: type your prompt, preview in browser, revise a single page, download PDF/PPTX |
 | Locked to one LLM provider | **Any OpenAI-compatible API**: OpenAI, DeepSeek, Ollama, vLLM, etc. |
 | Prompts buried in code | **Prompt Harness**: all LLM prompts as editable `.md` templates |
+| Needs visual assets | **Multimodal image tool**: optional image generation/editing adapter with local asset storage |
 
 ## Demo
 
@@ -152,6 +153,7 @@ style.md         — visual system
 page-planning.md — per-page content contract
 page-html.md     — HTML generation
 repair.md        — fix QA failures
+revise.md        — apply user-requested single-page edits
 ```
 
 Variables are injected via `{{VAR}}` syntax. Missing variables throw errors. No prompt logic in application code.
@@ -167,8 +169,23 @@ Playwright checks every page automatically:
 | BLANK | Page has < 5 characters of text |
 | CONSOLE | JavaScript errors |
 | SCREENSHOT | Captures PNG for visual review |
+| PNG-SIZE | Screenshot file too small or corrupt |
+| BLANK-PIXEL | Excessive single-color/blank-like area |
+| EDGE-CUT | Foreground pixels touching page edges |
+| LOW-CONTRAST | Weak luminance separation in content regions |
+| VERTICAL-TEXT | Narrow vertical foreground bands that may indicate stacked text |
 
 Failed pages enter a **repair loop** (max 3 rounds) where the LLM fixes issues based on QA feedback.
+
+Generated decks can also be manually revised from the Web UI. The endpoint `POST /api/runs/:runId/slides/:pageIndex/revise` updates one slide, reruns QA, rebuilds `preview.html`, and regenerates PDF/PPTX artifacts.
+
+### Multimodal Image Tool
+
+SlidePilot includes an optional OpenAI-compatible image adapter for generation and image editing. It defaults to the same `LLM_BASE_URL`/`LLM_API_KEY` and can be overridden with `IMAGE_BASE_URL`, `IMAGE_API_KEY`, and `IMAGE_MODEL`.
+
+- `POST /api/images/generate` creates PNG assets under `runs/{id}/assets/`.
+- `POST /api/images/edit` accepts multipart image uploads and stores edited PNG assets.
+- During Agent generation, visual blocks can call the image tool automatically when the image API is configured, then render the generated local asset in the slide.
 
 ## Tech Stack
 
@@ -180,6 +197,7 @@ Failed pages enter a **repair loop** (max 3 rounds) where the LLM fixes issues b
 | Schema Validation | Zod |
 | Browser Automation | Playwright |
 | LLM Interface | OpenAI SDK (any compatible API) |
+| Image Tool | OpenAI-compatible images API |
 | PDF Export | Playwright Print |
 | PPTX Export | PptxGenJS (full-slide PNG export) |
 
@@ -193,11 +211,14 @@ SlidePilot/
 │   ├── schemas.ts                # Zod schemas (all data models)
 │   ├── llm/
 │   │   └── client.ts             # OpenAI-compatible LLM client
+│   ├── multimodal/
+│   │   └── image-client.ts        # Image generation/editing adapter
 │   ├── prompts/
 │   │   ├── harness.ts            # Template engine
 │   │   └── templates/*.md        # Editable prompt templates
 │   ├── agent/
-│   │   └── orchestrator.ts       # Pipeline coordinator
+│   │   ├── orchestrator.ts       # Pipeline coordinator
+│   │   └── reviser.ts            # Single-slide manual revision
 │   ├── renderer/
 │   │   ├── style-generator.ts    # StyleSpec → global.css
 │   │   ├── page-renderer.ts      # PagePlanning → HTML
@@ -256,25 +277,56 @@ SlidePilot's architecture and roadmap were informed by these open-source PPT/sli
 | [frontend-slides](https://github.com/zarazhangrui/frontend-slides) | Frontend slide composition and visual template references |
 | [beautiful-html-templates](https://github.com/zarazhangrui/beautiful-html-templates) | HTML visual style/template references for richer slide layouts |
 
+Local reference clones live under `.packs/ppt-skills/` and are intentionally ignored by git. The current implementation has absorbed the shared patterns that fit SlidePilot's architecture: planning contracts, per-page HTML, browser/pixel QA, screenshot-based PPTX export, and template-driven layout/style ideas. The remaining native editable-object PPTX direction is tracked separately in the roadmap.
+
 ## Roadmap
 
-- [x] Per-page HTML rendering (1280×720)
-- [x] Planning-first architecture
-- [x] Global style system (StyleSpec → CSS)
-- [x] Playwright browser QA
-- [x] Per-page PDF export
-- [x] Screenshot-based PPTX export
-- [x] Prompt harness (template-based)
-- [x] Web UI
-- [x] Full LLM integration (outline → planning → HTML)
-- [x] Real-time progress in Web UI
-- [x] API + mock pipeline tests
-- [ ] Natural language iterative editing
-- [ ] Image search & embedding
-- [ ] Editable-object PPTX export
-- [ ] More themes & layout types
-- [ ] Docker deployment
-- [ ] Demo video & screenshots
+### Done
+
+- [x] Per-page HTML rendering with fixed 1280×720 slide files.
+- [x] Planning-first generation: requirement → outline → page planning JSON → HTML.
+- [x] Prompt Harness with editable Markdown templates.
+- [x] Global style system from `style.json` to `global.css`.
+- [x] Web UI with streaming Agent progress, tool events, artifacts, QA, and repair status.
+- [x] Browser QA with Playwright checks for load, dimensions, overflow, safe area, overlap, text, and console errors.
+- [x] Pixel-level screenshot QA for blank ratio, edge cutoff, low contrast, screenshot file size, and suspected vertical text.
+- [x] QA-targeted repair loop for failed pages.
+- [x] Per-page preview assembly plus PDF export.
+- [x] Screenshot-based PPTX export for reliable visual fidelity.
+- [x] Single-slide manual revision endpoint and Web UI controls.
+- [x] Multimodal image generation/editing adapter with local asset storage.
+- [x] API, mock pipeline, stream, revision, and image-adapter tests.
+- [x] Reference project review and local clones under `.packs/ppt-skills/`.
+
+### P0: Current Stabilization
+
+- [ ] Improve real Agent trace granularity for image/tool calls inside page generation.
+- [ ] Add visual asset selection policy: when to generate, when to reuse, and when to avoid images.
+- [ ] Add screenshot gallery and QA issue viewer in the Web UI.
+- [ ] Add persistent revision history UI using `revisions.json`.
+- [ ] Add generated-image cleanup and run artifact size limits.
+
+### P1: Deck Quality
+
+- [ ] Absorb more layout patterns from `frontend-slides` and `beautiful-html-templates`.
+- [ ] Expand theme library and page structure templates.
+- [ ] Add image search and embedding for factual/product/location visuals.
+- [ ] Add multi-turn natural language iterative editing across the whole deck.
+- [ ] Add template/style playbooks for business, education, research, and product decks.
+
+### P2: PowerPoint Direction
+
+- [ ] Build hybrid editable-object PPTX export for simple titles, body text, cards, and shapes.
+- [ ] Keep complex visuals as rendered images while mapping simple DOM/SVG to PPTX shapes.
+- [ ] Add PPTX template ingestion and brand style extraction.
+- [ ] Add PPTX round-trip QA: export → inspect slide count/images/text → report.
+
+### P3: Delivery
+
+- [ ] Docker packaging.
+- [ ] CI with mock tests, build, and Playwright smoke checks.
+- [ ] Demo video and screenshot gallery.
+- [ ] Public examples for HTML, PDF, PPTX, and image-assisted decks.
 
 ## Contributing
 

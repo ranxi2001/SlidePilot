@@ -22,6 +22,7 @@ import {
   type StyleSpec,
 } from "../schemas.js";
 import { chat, chatJSON, isConfigured } from "../llm/client.js";
+import { canAutoGenerateImages, generateImage } from "../multimodal/image-client.js";
 import { renderTemplate } from "../prompts/harness.js";
 import { generateGlobalCSS, PRESET_STYLES } from "../renderer/style-generator.js";
 import { wrapPageHTML, renderPageFromPlanning } from "../renderer/page-renderer.js";
@@ -236,6 +237,7 @@ export async function runPipeline(request: CreateRequest, onProgress?: ProgressF
     pdfPath: pdfResult.success ? pdfPath : undefined,
     pptxPath: pptxResult.success ? pptxPath : undefined,
   });
+  saveFile(runId, "qa.json", JSON.stringify(toPublicQA(qa, runId), null, 2));
   saveFile(runId, "report.md", report);
   progress("report", "done", "report.md", { kind: "artifact" });
 
@@ -261,6 +263,7 @@ export async function runPipeline(request: CreateRequest, onProgress?: ProgressF
       previewHtml: "preview.html",
       pdf: pdfResult.success ? "deck.pdf" : undefined,
       pptx: pptxResult.success ? "deck.pptx" : undefined,
+      qa: "qa.json",
     },
   }, null, 2));
 
@@ -271,6 +274,13 @@ export async function runPipeline(request: CreateRequest, onProgress?: ProgressF
     pptxUrl: pptxResult.success ? `/runs/${runId}/deck.pptx` : undefined,
     qa,
     totalPages: outline.totalPages,
+  };
+}
+
+function toPublicQA(qa: QAResult, runId: string): QAResult {
+  return {
+    ...qa,
+    screenshots: qa.screenshots.map((path) => `/runs/${runId}/png/${path.split(/[\\/]/).pop()}`),
   };
 }
 
@@ -384,6 +394,13 @@ async function buildPage(options: {
     planning = generateMockPlanning(item.index, item, outline);
   }
 
+  planning = await attachVisualAssets({
+    planning,
+    runId,
+    useLLM,
+    progress,
+  });
+
   saveFile(runId, `planning/${planningFileName(item.index)}`, JSON.stringify(planning, null, 2));
   progress("artifact.planning", "done", `planning/${planningFileName(item.index)}`, {
     kind: "artifact",
@@ -405,6 +422,60 @@ async function buildPage(options: {
     message: `Saved slide ${item.index} HTML.`,
   });
   return { index: item.index, htmlPath, planning };
+}
+
+async function attachVisualAssets(options: {
+  planning: PagePlanning;
+  runId: string;
+  useLLM: boolean;
+  progress: ProgressFn;
+}): Promise<PagePlanning> {
+  const { planning, runId, useLLM, progress } = options;
+  if (!useLLM || !canAutoGenerateImages()) return planning;
+
+  const blocks = [...planning.contentBlocks];
+  const firstVisualIndex = blocks.findIndex((block) => block.type === "visual" && typeof block.content === "string" && block.content.trim());
+  if (firstVisualIndex < 0) return planning;
+
+  const block = blocks[firstVisualIndex];
+  const visualPrompt = String(block.content).trim();
+
+  try {
+    progress("tool.image.generate", "start", `page ${planning.pageIndex}`, {
+      kind: "tool",
+      pageIndex: planning.pageIndex,
+      message: "Generate a local visual asset for this slide.",
+    });
+    const images = await generateImage({
+      prompt: `${visualPrompt}. Presentation slide visual asset, clean composition, no text, 16:9 friendly.`,
+      size: "1792x1024",
+      n: 1,
+      runId,
+    });
+    const image = images[0];
+    progress("tool.image.generate", "done", image.url, {
+      kind: "artifact",
+      pageIndex: planning.pageIndex,
+      message: "Saved generated image asset.",
+    });
+
+    blocks[firstVisualIndex] = {
+      ...block,
+      content: {
+        prompt: visualPrompt,
+        assetUrl: image.url,
+        alt: visualPrompt,
+      },
+    };
+    return { ...planning, contentBlocks: blocks };
+  } catch (err) {
+    progress("tool.image.generate", "error", `page ${planning.pageIndex}`, {
+      kind: "tool",
+      pageIndex: planning.pageIndex,
+      message: String(err).slice(0, 240),
+    });
+    return planning;
+  }
 }
 
 async function generatePagePlanning(item: OutlineItem, outline: Outline, requirement: RequirementSpec, progress: ProgressFn): Promise<PagePlanning> {

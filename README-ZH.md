@@ -257,23 +257,52 @@ SlidePilot 的架构和路线参考了这些开源 PPT/Slides 项目：
 
 ## 路线图
 
-- [x] 每页独立 HTML 渲染（1280×720）
-- [x] 规划先行架构（Planning → HTML）
-- [x] 全局样式系统（StyleSpec → CSS）
-- [x] Playwright 浏览器 QA
-- [x] 逐页 PDF 导出
-- [x] 截图式 PPTX 导出
-- [x] Prompt Harness（模板化提示词）
-- [x] Web UI
-- [x] 完整 LLM 接入（大纲 → 规划 → HTML）
-- [x] Web UI 实时进度推送
-- [x] API + Mock 管线测试
-- [ ] 自然语言迭代修改
-- [ ] 图片搜索与嵌入
-- [ ] 可编辑对象 PPTX 导出
-- [ ] 更多主题与布局类型
-- [ ] Docker 部署
-- [ ] 演示视频与截图
+### 已完成
+
+- [x] 每页独立 HTML 渲染（固定 1280×720）。
+- [x] 规划先行生成链路：需求 → 大纲 → 单页规划 JSON → HTML。
+- [x] Prompt Harness：提示词全部放在可编辑 Markdown 模板中。
+- [x] 全局样式系统：`style.json` → `global.css`。
+- [x] Web UI 实时展示 Agent 进度、工具调用、产物、QA、修复状态。
+- [x] Playwright 浏览器 QA：加载、尺寸、溢出、安全区、重叠、文本、控制台错误。
+- [x] 像素级截图 QA：空白比例、边缘裁切、低对比度、截图文件过小、疑似竖排文字。
+- [x] 针对 QA 失败页的自动修复回路。
+- [x] 多页预览组装与 PDF 导出。
+- [x] 截图式 PPTX 导出，优先保证视觉一致性。
+- [x] 单页人工修订 API 与 Web UI 控件。
+- [x] 多模态图片生成/以图改图适配器，生成资产本地保存。
+- [x] API、mock pipeline、stream、revision、image adapter 测试。
+- [x] 参考项目阅读与本地 clone，目录为 `.packs/ppt-skills/`。
+
+### P0：当前稳定化
+
+- [ ] 细化 Agent trace，让页面生成中的图片/工具调用也能完整展示。
+- [ ] 增加视觉资产策略：什么时候生图、什么时候复用、什么时候不用图。
+- [ ] 在 Web UI 加截图画廊和 QA 问题查看器。
+- [ ] 用 `revisions.json` 做可见的修订历史 UI。
+- [ ] 增加生成图片清理策略和 run 产物大小限制。
+
+### P1：Deck 质量
+
+- [ ] 继续吸收 `frontend-slides` 和 `beautiful-html-templates` 的布局结构。
+- [ ] 扩展主题库和页面结构模板。
+- [ ] 增加图片搜索与事实型视觉素材嵌入。
+- [ ] 支持整套 deck 的多轮自然语言迭代修改。
+- [ ] 增加商务、教育、研究、产品类 deck 的模板 playbook。
+
+### P2：PowerPoint 路线
+
+- [ ] 做混合可编辑对象 PPTX：标题、正文、卡片、简单 shape 转为 PPTX 对象。
+- [ ] 复杂视觉保留为渲染图片，简单 DOM/SVG 映射为 PPTX shape。
+- [ ] 支持 PPTX 模板导入和品牌样式抽取。
+- [ ] 增加 PPTX round-trip QA：导出 → 检查页数/图片/文本 → 报告。
+
+### P3：交付
+
+- [ ] Docker 打包。
+- [ ] CI：mock 测试、构建、Playwright smoke check。
+- [ ] 演示视频和截图画廊。
+- [ ] 公开 HTML、PDF、PPTX、图片辅助 deck 示例。
 
 ## 目标用户
 

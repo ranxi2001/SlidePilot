@@ -104,13 +104,34 @@ export function renderPageFromPlanning(planning: PagePlanning): string {
         parts.push(`  </div>`);
         break;
       case "visual":
-        parts.push(`  <div style="margin-top:20px;padding:32px;border:2px dashed rgba(128,128,128,0.2);border-radius:12px;text-align:center;opacity:0.5;">${block.content}</div>`);
+        parts.push(renderVisualBlock(block.content));
         break;
     }
   }
 
   parts.push(`</div>`);
   return parts.join("\n");
+}
+
+function renderVisualBlock(content: unknown): string {
+  if (content && typeof content === "object" && "assetUrl" in content) {
+    const visual = content as { assetUrl?: string; alt?: string; prompt?: string };
+    const alt = escapeHTML(visual.alt || visual.prompt || "Generated visual");
+    return `  <figure style="margin-top:20px;display:flex;flex-direction:column;gap:10px;max-height:360px;">
+    <img src="${escapeHTML(visual.assetUrl || "")}" alt="${alt}" style="width:100%;max-height:320px;object-fit:cover;border-radius:12px;border:1px solid var(--card-border);">
+  </figure>`;
+  }
+
+  return `  <div style="margin-top:20px;padding:32px;border:2px dashed rgba(128,128,128,0.2);border-radius:12px;text-align:center;opacity:0.5;">${escapeHTML(String(content ?? ""))}</div>`;
+}
+
+function escapeHTML(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 function getLayoutStyle(pageType: string, layoutHint: string): string {
