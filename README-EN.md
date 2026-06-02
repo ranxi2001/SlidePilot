@@ -348,6 +348,8 @@ Local reference clones live under `.packs/ppt-skills/` and are intentionally ign
 
 Contributions welcome! See [docs/PRD.md](docs/PRD.md) for the full product requirements document.
 
+Frontend UX and UI iteration details are tracked in [docs/FRONTEND-PRD.md](docs/FRONTEND-PRD.md).
+
 ## License
 
 [MIT](LICENSE)

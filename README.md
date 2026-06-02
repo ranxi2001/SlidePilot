@@ -355,6 +355,8 @@ SlidePilot 的架构和路线参考了这些开源 PPT/Slides 项目：
 
 欢迎贡献！完整产品需求文档见 [docs/PRD.md](docs/PRD.md)。
 
+前端体验与 UI 迭代文档见 [docs/FRONTEND-PRD.md](docs/FRONTEND-PRD.md)。
+
 ## 许可证
 
 [MIT](LICENSE)
