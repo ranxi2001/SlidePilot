@@ -111,7 +111,7 @@ export const pagePlanningSchema = z.object({
     maxLinesPerCard: z.number().int().default(3),
   }),
   contentBlocks: z.array(z.object({
-    type: z.enum(["heading", "subheading", "bullets", "paragraph", "card", "metric", "timeline", "quote", "visual"]),
+    type: z.enum(["heading", "subheading", "bullets", "paragraph", "card", "metric", "timeline", "quote", "visual", "image"]),
     content: z.unknown(),
   })),
   speakerNotes: z.string().optional(),
@@ -139,6 +139,18 @@ export const qaResultSchema = z.object({
 });
 
 export type QAResult = z.infer<typeof qaResultSchema>;
+
+// === Image Block ===
+
+export const imageBlockSchema = z.object({
+  prompt: z.string(),
+  path: z.string().optional(),
+  alt: z.string().optional(),
+  aspectRatio: z.enum(["16:9", "4:3", "1:1", "3:2"]).default("16:9"),
+  layout: z.enum(["full-bleed", "inset", "side"]).default("inset"),
+});
+
+export type ImageBlock = z.infer<typeof imageBlockSchema>;
 
 // === Run Manifest ===
 

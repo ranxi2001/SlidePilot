@@ -11,6 +11,13 @@ screenshots/
 # Env / secrets
 .env
 *.env
-.claude/skills/local-dev
 .DS_Store
 .packs/
+
+# Skills (symlinks to .agents/)
+.claude/skills/local-dev
+.claude/skills/baoyu-design
+.claude/skills/baoyu-image-gen
+
+# Installed agent skills (fetched via npx skills add)
+.agents/

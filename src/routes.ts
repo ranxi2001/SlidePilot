@@ -4,6 +4,7 @@ import { isConfigured, loadConfig } from "./llm/client.js";
 import { editImage, generateImage, isImageToolConfigured, loadImageToolConfig } from "./multimodal/image-client.js";
 import { runPipeline, type ProgressEventMeta, type ProgressStatus } from "./agent/orchestrator.js";
 import { reviseRunSlide } from "./agent/reviser.js";
+import { exportPptx, isEditablePptxExportAvailable, isPptxExportAvailable } from "./export/pptx.js";
 import { generateRunId, getRunDir, listRuns } from "./storage/run-store.js";
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -25,6 +26,11 @@ apiRoutes.get("/status", (c) => {
       baseURL: imageConfigured ? imageCfg.baseURL : null,
       autoGenerate: imageConfigured ? imageCfg.autoGenerate : false,
       maxImagesPerRun: imageConfigured ? imageCfg.maxImagesPerRun : 0,
+    },
+    capabilities: {
+      imageGen: imageConfigured,
+      pptxExport: isPptxExportAvailable(),
+      editablePptxExport: isEditablePptxExportAvailable(),
     },
   });
 });
@@ -198,6 +204,37 @@ apiRoutes.post("/images/edit", async (c) => {
 
 apiRoutes.get("/runs", (c) => {
   return c.json({ runs: listRuns() });
+});
+
+apiRoutes.post("/export/pptx", async (c) => {
+  const body = await c.req.json();
+  const runId = typeof body.runId === "string" ? decodeRunId(body.runId) : "";
+  if (!runId || /[\\/]|(^|\/)\.\.($|\/)/.test(runId)) {
+    return c.json({ error: "Invalid runId." }, 400);
+  }
+
+  const runDir = getRunDir(runId);
+  const manifest = readJsonIfExists(join(runDir, "manifest.json")) as { totalPages?: number } | null;
+  const totalPages = Number(manifest?.totalPages) || listFiles(runDir, "png", [".png"]).length || 1;
+  const port = Number(process.env.PORT) || 4321;
+  const mode = body.mode === "screenshots" ? "screenshots" : "editable";
+  const result = await exportPptx({
+    previewUrl: `http://127.0.0.1:${port}/runs/${encodeURIComponent(runId)}/preview.html`,
+    outputDir: runDir,
+    filename: "deck",
+    totalPages,
+    mode,
+  });
+
+  if (!result.success) {
+    return c.json({ error: result.error || "PPTX export failed." }, 500);
+  }
+
+  return c.json({
+    pptxUrl: runAssetUrl(runId, "deck.pptx"),
+    mode: result.mode,
+    flags: result.flags || [],
+  });
 });
 
 apiRoutes.get("/runs/:runId", (c) => {

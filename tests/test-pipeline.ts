@@ -21,6 +21,9 @@ console.log(`  QA Score: ${result.qa.score}`);
 console.log(`  QA Pass:  ${result.qa.passed}`);
 console.log(`  Preview:  ${result.previewUrl}`);
 console.log(`  PDF:      ${result.pdfUrl || "none"}`);
+console.log(`  PPTX:     ${result.pptxUrl || "none"}`);
+console.log(`  ImageGen: ${result.imageGenEnabled}`);
+console.log(`  PptxExport: ${result.pptxExportEnabled}`);
 
 if (result.qa.checks.length > 0) {
   console.log(`\n  QA Issues:`);

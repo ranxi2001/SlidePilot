@@ -39,22 +39,22 @@ export function renderPageFromPlanning(planning: PagePlanning): string {
   for (const block of blocks) {
     switch (block.type) {
       case "heading":
-        parts.push(`  <h1>${block.content}</h1>`);
+        parts.push(`  <h1>${escapeHTML(String(block.content ?? ""))}</h1>`);
         break;
       case "subheading":
-        parts.push(`  <h3>${block.content}</h3>`);
+        parts.push(`  <h3>${escapeHTML(String(block.content ?? ""))}</h3>`);
         break;
       case "bullets": {
         const items = Array.isArray(block.content) ? block.content : [];
         parts.push(`  <ul>`);
         for (const item of items) {
-          parts.push(`    <li>${item}</li>`);
+          parts.push(`    <li>${escapeHTML(String(item ?? ""))}</li>`);
         }
         parts.push(`  </ul>`);
         break;
       }
       case "paragraph":
-        parts.push(`  <p>${block.content}</p>`);
+        parts.push(`  <p>${escapeHTML(String(block.content ?? ""))}</p>`);
         break;
       case "card": {
         const cards = Array.isArray(block.content) ? block.content : [];
@@ -63,8 +63,8 @@ export function renderPageFromPlanning(planning: PagePlanning): string {
         for (const card of cards) {
           const c = card as { title?: string; desc?: string };
           parts.push(`    <div class="card">`);
-          if (c.title) parts.push(`      <div style="font-weight:650;margin-bottom:0.3em;">${c.title}</div>`);
-          if (c.desc) parts.push(`      <div style="opacity:0.65;font-size:0.9em;line-height:1.5;">${c.desc}</div>`);
+          if (c.title) parts.push(`      <div style="font-weight:650;margin-bottom:0.3em;">${escapeHTML(c.title)}</div>`);
+          if (c.desc) parts.push(`      <div style="opacity:0.65;font-size:0.9em;line-height:1.5;">${escapeHTML(c.desc)}</div>`);
           parts.push(`    </div>`);
         }
         parts.push(`  </div>`);
@@ -76,8 +76,8 @@ export function renderPageFromPlanning(planning: PagePlanning): string {
         for (const m of metrics) {
           const metric = m as { value?: string; label?: string };
           parts.push(`    <div style="text-align:center;">`);
-          parts.push(`      <div class="metric-value">${metric.value || ""}</div>`);
-          parts.push(`      <div class="metric-label">${metric.label || ""}</div>`);
+          parts.push(`      <div class="metric-value">${escapeHTML(metric.value || "")}</div>`);
+          parts.push(`      <div class="metric-label">${escapeHTML(metric.label || "")}</div>`);
           parts.push(`    </div>`);
         }
         parts.push(`  </div>`);
@@ -90,8 +90,8 @@ export function renderPageFromPlanning(planning: PagePlanning): string {
           const t = item as { label?: string; desc?: string };
           parts.push(`    <div style="position:relative;">`);
           parts.push(`      <div style="position:absolute;left:-31px;top:5px;width:10px;height:10px;border-radius:50%;background:var(--accent);"></div>`);
-          parts.push(`      <div style="font-weight:650;">${t.label || ""}</div>`);
-          parts.push(`      <div style="opacity:0.6;font-size:0.9em;">${t.desc || ""}</div>`);
+          parts.push(`      <div style="font-weight:650;">${escapeHTML(t.label || "")}</div>`);
+          parts.push(`      <div style="opacity:0.6;font-size:0.9em;">${escapeHTML(t.desc || "")}</div>`);
           parts.push(`    </div>`);
         }
         parts.push(`  </div>`);
@@ -100,17 +100,38 @@ export function renderPageFromPlanning(planning: PagePlanning): string {
       case "quote":
         parts.push(`  <div style="text-align:center;max-width:700px;margin:0 auto;">`);
         parts.push(`    <div style="font-size:4em;opacity:0.15;line-height:1;font-family:Georgia,serif;">"</div>`);
-        parts.push(`    <p style="font-size:1.4em;font-style:italic;line-height:1.6;">${block.content}</p>`);
+        parts.push(`    <p style="font-size:1.4em;font-style:italic;line-height:1.6;">${escapeHTML(String(block.content ?? ""))}</p>`);
         parts.push(`  </div>`);
         break;
       case "visual":
         parts.push(renderVisualBlock(block.content));
+        break;
+      case "image":
+        parts.push(renderImageBlock(block.content));
         break;
     }
   }
 
   parts.push(`</div>`);
   return parts.join("\n");
+}
+
+function renderImageBlock(content: unknown): string {
+  if (!content || typeof content !== "object") {
+    return "";
+  }
+
+  const image = content as { path?: string; assetUrl?: string; alt?: string; prompt?: string; layout?: string };
+  const src = image.path || image.assetUrl;
+  const alt = image.alt || image.prompt || "Generated image";
+  if (!src) {
+    return `  <div style="margin-top:20px;padding:32px;border:2px dashed rgba(128,128,128,0.2);border-radius:12px;text-align:center;opacity:0.5;">${escapeHTML(image.prompt || "Image placeholder")}</div>`;
+  }
+
+  const objectFit = image.layout === "full-bleed" ? "cover" : "contain";
+  return `  <figure style="margin-top:20px;display:flex;flex-direction:column;gap:10px;max-height:360px;">
+    <img src="${escapeHTML(src)}" alt="${escapeHTML(alt)}" style="width:100%;max-height:320px;object-fit:${objectFit};border-radius:12px;border:1px solid var(--card-border);">
+  </figure>`;
 }
 
 function renderVisualBlock(content: unknown): string {
@@ -135,7 +156,7 @@ function escapeHTML(value: string): string {
 }
 
 function getLayoutStyle(pageType: string, layoutHint: string): string {
-  const base = "width:1280px;height:720px;padding:56px 72px;display:flex;flex-direction:column;position:relative;overflow:hidden;";
+  const base = "width:1280px;height:720px;padding:56px 72px;display:flex;flex-direction:column;position:relative;overflow:hidden;background:radial-gradient(circle at 82% 18%,rgba(79,140,255,0.26) 0 110px,transparent 260px),radial-gradient(circle at 10% 84%,rgba(35,214,197,0.18) 0 120px,transparent 280px),linear-gradient(135deg,rgba(255,255,255,0.045) 0 18%,transparent 18% 100%);";
 
   if (pageType === "cover" || pageType === "end" || layoutHint.includes("center")) {
     return base + "justify-content:center;align-items:center;text-align:center;";

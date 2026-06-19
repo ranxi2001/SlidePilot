@@ -37,6 +37,7 @@ export function getRunDir(runId: string): string {
   ensureDir(join(dir, "planning"));
   ensureDir(join(dir, "slides"));
   ensureDir(join(dir, "png"));
+  ensureDir(join(dir, "imgs"));
   return dir;
 }
 

@@ -218,10 +218,18 @@ export async function runPipeline(request: CreateRequest, onProgress?: ProgressF
 
   progress("pptx", "start", undefined, {
     kind: "tool",
-    message: "Export the deck to PPTX by embedding verified slide screenshots.",
+    message: "Export the deck to PPTX, preferring editable objects and falling back to verified screenshots.",
   });
   const pptxPath = join(runDir, "deck.pptx");
-  const pptxResult = await measured(metrics, "pptx", () => exportPptx({ screenshotPaths: qa.screenshots, outputPath: pptxPath }), progress);
+  const port = Number(process.env.PORT) || 4321;
+  const pptxResult = await measured(metrics, "pptx", () => exportPptx({
+    previewUrl: `http://127.0.0.1:${port}${runAssetUrl(runId, "preview.html")}`,
+    outputDir: runDir,
+    outputPath: pptxPath,
+    filename: "deck",
+    totalPages: outline.totalPages,
+    screenshotPaths: qa.screenshots,
+  }), progress);
   progress("pptx", pptxResult.success ? "done" : "error", pptxResult.error || "deck.pptx", { kind: "artifact" });
 
   progress("report", "start", undefined, {

@@ -70,7 +70,15 @@ export async function reviseRunSlide(options: ReviseSlideOptions): Promise<Revis
   const pdfResult = await exportPdf({ pagePaths: pageHtmlPaths, outputPath: pdfPath });
 
   const pptxPath = join(runDir, "deck.pptx");
-  const pptxResult = await exportPptx({ screenshotPaths: qa.screenshots, outputPath: pptxPath });
+  const port = Number(process.env.PORT) || 4321;
+  const pptxResult = await exportPptx({
+    previewUrl: `http://127.0.0.1:${port}${runAssetUrl(runId, "preview.html")}`,
+    outputDir: runDir,
+    outputPath: pptxPath,
+    filename: "deck",
+    totalPages: manifest.totalPages,
+    screenshotPaths: qa.screenshots,
+  });
 
   const report = generateReport({
     runId,

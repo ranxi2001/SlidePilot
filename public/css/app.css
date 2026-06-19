@@ -482,6 +482,22 @@ input[type="number"]:focus {
   gap: 8px;
 }
 
+.page-indicator {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 58px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0 10px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-family: "Fira Code", "JetBrains Mono", ui-monospace, monospace;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
 .run-stats span {
   min-height: 30px;
   display: inline-flex;
@@ -635,6 +651,24 @@ input[type="number"]:focus {
   border-color: var(--line);
   background: var(--surface-soft);
   color: var(--muted);
+}
+
+.preview-nav-btn {
+  width: 34px;
+  padding: 0;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.btn:disabled,
+.preview-nav-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+.btn.loading {
+  cursor: wait;
+  opacity: 0.72;
 }
 
 .btn:hover {

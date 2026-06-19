@@ -25,6 +25,10 @@ const btnOpen = document.getElementById("btn-open");
 const btnPptx = document.getElementById("btn-pptx");
 const btnPdf = document.getElementById("btn-pdf");
 const btnHtml = document.getElementById("btn-html");
+const btnPrev = document.getElementById("btn-prev");
+const btnNext = document.getElementById("btn-next");
+const btnFullscreen = document.getElementById("btn-fullscreen");
+const pageIndicator = document.getElementById("page-indicator");
 const revisionPageEl = document.getElementById("revision-page");
 const revisionInstructionEl = document.getElementById("revision-instruction");
 const btnRevise = document.getElementById("btn-revise");
@@ -73,6 +77,9 @@ let eventCount = 0;
 let runStart = 0;
 let timer = null;
 let currentResult = null;
+let currentPage = 0;
+let totalPages = 0;
+let statusCapabilities = {};
 let autoScrollEvents = true;
 let previewLoadTimer = null;
 let previewFallbackUrl = "";
@@ -90,6 +97,7 @@ async function init() {
   try {
     const res = await fetch("/api/status");
     const data = await res.json();
+    statusCapabilities = data.capabilities || {};
     statusPill.textContent = data.llm ? `${data.model || "LLM"} 已连接` : "Mock 模式";
     statusPill.classList.toggle("ready", Boolean(data.llm));
     statusPill.classList.toggle("warn", !data.llm);
@@ -104,6 +112,18 @@ async function init() {
     imageStatus.textContent = "未知";
   }
 }
+
+btnPrev.addEventListener("click", () => navigateSlide(-1));
+btnNext.addEventListener("click", () => navigateSlide(1));
+btnFullscreen.addEventListener("click", () => {
+  if (previewFrame.requestFullscreen) previewFrame.requestFullscreen();
+});
+btnPptx.addEventListener("click", handlePptxClick);
+document.addEventListener("keydown", (event) => {
+  if (previewPanel.hidden || document.activeElement === promptEl || document.activeElement === revisionInstructionEl) return;
+  if (event.key === "ArrowLeft") navigateSlide(-1);
+  if (event.key === "ArrowRight") navigateSlide(1);
+});
 
 btnCreate.addEventListener("click", async () => {
   const prompt = promptEl.value.trim();
@@ -291,6 +311,8 @@ function showResult(result) {
   if (!result?.previewUrl) return;
 
   currentResult = result;
+  totalPages = Number(result.totalPages) || 1;
+  currentPage = 0;
   emptyPanel.hidden = true;
   livePanel.hidden = true;
   previewPanel.hidden = false;
@@ -303,8 +325,9 @@ function showResult(result) {
 
   setDownloadLink(btnHtml, result.previewUrl);
   setDownloadLink(btnOpen, result.previewUrl);
-  setDownloadLink(btnPptx, result.pptxUrl);
+  setPptxLink(result);
   setDownloadLink(btnPdf, result.pdfUrl);
+  setPreviewNavigation(true);
   updateQABadge(result.qa);
 
   resultSummary.textContent = "预览加载中...";
@@ -344,6 +367,8 @@ function resetRun() {
   eventCount = 0;
   runStart = Date.now();
   currentResult = null;
+  currentPage = 0;
+  totalPages = 0;
   previewFallbackUrl = "";
   autoScrollEvents = true;
   emptyPanel.hidden = true;
@@ -354,6 +379,7 @@ function resetRun() {
   btnPptx.hidden = true;
   btnPdf.hidden = true;
   btnOpen.hidden = true;
+  setPreviewNavigation(false);
   previewFrame.removeAttribute("src");
   previewImage.hidden = true;
   previewImage.removeAttribute("src");
@@ -712,6 +738,80 @@ function setDownloadLink(node, url) {
     node.removeAttribute("href");
     node.hidden = true;
   }
+}
+
+function setPptxLink(result) {
+  btnPptx.classList.remove("loading");
+  btnPptx.textContent = result.pptxUrl ? "下载 PPTX" : "生成 PPTX";
+  btnPptx.dataset.runId = result.runId || "";
+  btnPptx.dataset.mode = statusCapabilities.editablePptxExport ? "editable" : "screenshots";
+  if (result.pptxUrl) {
+    btnPptx.href = result.pptxUrl;
+    btnPptx.setAttribute("download", "");
+    btnPptx.hidden = false;
+  } else if (statusCapabilities.pptxExport !== false) {
+    btnPptx.removeAttribute("href");
+    btnPptx.removeAttribute("download");
+    btnPptx.hidden = false;
+  } else {
+    btnPptx.hidden = true;
+  }
+}
+
+async function handlePptxClick(event) {
+  if (btnPptx.hasAttribute("download")) return;
+  event.preventDefault();
+  const runId = btnPptx.dataset.runId || currentResult?.runId;
+  if (!runId || btnPptx.classList.contains("loading")) return;
+
+  btnPptx.classList.add("loading");
+  btnPptx.textContent = "导出中...";
+  try {
+    const res = await fetch("/api/export/pptx", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ runId, mode: btnPptx.dataset.mode || "editable" }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.pptxUrl) throw new Error(data.error || `HTTP ${res.status}`);
+    currentResult = { ...currentResult, pptxUrl: data.pptxUrl };
+    setPptxLink(currentResult);
+    btnPptx.click();
+  } catch (err) {
+    btnPptx.textContent = "导出失败";
+    setTimeout(() => setPptxLink(currentResult || {}), 1800);
+  } finally {
+    btnPptx.classList.remove("loading");
+  }
+}
+
+function setPreviewNavigation(visible) {
+  btnPrev.hidden = !visible;
+  btnNext.hidden = !visible;
+  pageIndicator.hidden = !visible;
+  btnFullscreen.hidden = !visible;
+  updatePageIndicator();
+}
+
+function navigateSlide(delta) {
+  if (!totalPages) return;
+  const next = currentPage + delta;
+  if (next < 0 || next >= totalPages) return;
+  currentPage = next;
+  updatePageIndicator();
+
+  previewFrame.contentWindow?.postMessage({ type: "goTo", index: currentPage }, "*");
+  try {
+    const slides = previewFrame.contentDocument?.querySelectorAll(".slide");
+    slides?.forEach((slide, index) => slide.classList.toggle("active", index === currentPage));
+  } catch {}
+  selectRevisionPage(currentPage + 1);
+}
+
+function updatePageIndicator() {
+  pageIndicator.textContent = `${Math.min(currentPage + 1, totalPages || 1)} / ${totalPages || 1}`;
+  btnPrev.disabled = currentPage <= 0;
+  btnNext.disabled = currentPage >= totalPages - 1;
 }
 
 function setPreviewError(message) {
